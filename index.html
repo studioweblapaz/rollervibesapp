@@ -101,13 +101,12 @@
         .btn-add { background: var(--accent-color); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 25px; font-weight: 700; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.9rem; }
         .btn-add:hover { background: #E60062; }
         
-        /* ✅ BOTÓN DE INSTALACIÓN: Visible, llamativo y a prueba de fallos */
         .install-btn { 
-            display: none; /* Se activa con JS */
+            display: none; 
             position: fixed; 
             bottom: 20px; 
             left: 20px; 
-            background: var(--accent-color); /* Color llamativo para destacar */
+            background: var(--accent-color); 
             color: white; 
             border: none; 
             padding: 0.9rem 1.5rem; 
@@ -235,7 +234,6 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
         </a>
         
-        <!-- ✅ Botón de instalación visible -->
         <button class="install-btn" id="install-btn">📲 Instalar App</button>
     </div>
 
@@ -330,41 +328,28 @@
             });
         }
 
-        // ✅ LÓGICA DE INSTALACIÓN A PRUEBA DE FALLOS
         const installBtn = document.getElementById('install-btn');
         let deferredPrompt = null;
-
-        // 1. Verificar si ya está instalada (modo standalone)
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 
         if (!isStandalone) {
-            // 2. Escuchar el evento oficial de instalación
             window.addEventListener('beforeinstallprompt', (e) => { 
                 e.preventDefault(); 
                 deferredPrompt = e; 
                 installBtn.style.display = 'flex'; 
             });
-
-            // 3. FALLBACK: Si a los 2.5 segundos el botón sigue oculto, lo mostramos de todos modos.
-            // (Esto pasa a veces en Android cuando el menú de 3 puntos sí tiene la opción, pero el evento se retrasa o se suprime).
             setTimeout(() => {
                 if (installBtn.style.display === 'none' || installBtn.style.display === '') {
                     installBtn.style.display = 'flex';
                 }
             }, 2500);
-
-            // 4. Acción al hacer clic
             installBtn.addEventListener('click', async () => {
                 if (deferredPrompt) { 
-                    // Intentar mostrar el prompt nativo
                     deferredPrompt.prompt(); 
                     const { outcome } = await deferredPrompt.userChoice; 
-                    if (outcome === 'accepted') {
-                        installBtn.style.display = 'none'; 
-                    }
+                    if (outcome === 'accepted') installBtn.style.display = 'none'; 
                     deferredPrompt = null; 
                 } else {
-                    // Si no hay evento, guiar al usuario para usar el menú de 3 puntos (que sabemos que sí funciona)
                     alert('📲 Para instalar la app:\n\n1. Toca el menú de Chrome (⋮) en la parte superior derecha.\n2. Selecciona "Instalar aplicación" o "Agregar a la pantalla principal".');
                 }
             });
@@ -446,54 +431,32 @@
         function checkUpcomingPayments() {
             if (!("Notification" in window) || Notification.permission !== "granted") return;
             if (sessionStorage.getItem('notified_payments_today')) return;
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            const today = new Date(); today.setHours(0, 0, 0, 0);
             let notificationsToSend = [];
-
             students.forEach(student => {
                 const cutoffDay = parseInt(student.fechaCorte) || 5;
                 const nextDueDate = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
                 if (today > nextDueDate) nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-                
-                let needsPayment = false;
-                let statusText = "";
-                
+                let needsPayment = false, statusText = "";
                 if (!student.pagos || student.pagos.length === 0) {
-                    needsPayment = true;
-                    statusText = "Sin pagos registrados";
+                    needsPayment = true; statusText = "Sin pagos registrados";
                 } else {
                     const lastPayment = student.pagos[student.pagos.length - 1];
                     const lastPaymentDate = lastPayment.fecha.toDate ? lastPayment.fecha.toDate() : new Date(lastPayment.fecha);
-                    
                     if (lastPaymentDate < nextDueDate) {
                         const daysUntilDue = Math.ceil((nextDueDate - today) / (1000 * 60 * 60 * 24));
-                        if (daysUntilDue < 0) {
-                            needsPayment = true;
-                            statusText = `Vencido desde hace ${Math.abs(daysUntilDue)} días`;
-                        } else if (daysUntilDue <= 5) {
-                            needsPayment = true;
-                            statusText = `Vence en ${daysUntilDue} días (${nextDueDate.toLocaleDateString('es-MX')})`;
-                        }
+                        if (daysUntilDue < 0) { needsPayment = true; statusText = `Vencido desde hace ${Math.abs(daysUntilDue)} días`; } 
+                        else if (daysUntilDue <= 5) { needsPayment = true; statusText = `Vence en ${daysUntilDue} días (${nextDueDate.toLocaleDateString('es-MX')})`; }
                     }
                 }
-                
-                if (needsPayment) {
-                    notificationsToSend.push({
-                        name: student.nombre,
-                        status: statusText,
-                        amount: student.montoMensual || 0
-                    });
-                }
+                if (needsPayment) notificationsToSend.push({ name: student.nombre, status: statusText, amount: student.montoMensual || 0 });
             });
-
             if (notificationsToSend.length > 0) {
                 notificationsToSend.forEach((item, index) => {
                     setTimeout(() => {
                         new Notification("🛼 Roller Vibes MX - Recordatorio de Pago", {
                             body: `Deportista: ${item.name}\nEstado: ${item.status}\nMonto: $${item.amount}\n\nToca aquí para gestionar el pago.`,
-                            icon: "./logo-192.png",
-                            badge: "./logo-192.png"
+                            icon: "./logo-192.png", badge: "./logo-192.png"
                         });
                     }, index * 1500);
                 });
@@ -540,12 +503,8 @@
                     document.getElementById('empty-state').style.display = 'none';
                     document.getElementById('dashboard-content').style.display = 'block';
                     renderDashboard(); renderStudents();
-                    
-                    if ("Notification" in window && Notification.permission === "granted") {
-                        checkUpcomingPayments();
-                    } else if ("Notification" in window && Notification.permission === "default") {
-                        document.getElementById('btn-enable-notif').style.display = 'inline-block';
-                    }
+                    if ("Notification" in window && Notification.permission === "granted") checkUpcomingPayments();
+                    else if ("Notification" in window && Notification.permission === "default") document.getElementById('btn-enable-notif').style.display = 'inline-block';
                 }
             }, (error) => {
                 console.error('Error al cargar deportistas:', error);
@@ -553,20 +512,32 @@
             });
         }
 
+        // ✅ CORREGIDO: Lógica robusta idéntica a la del admin para evitar falsos "Vencidos"
         function getPaymentStatus(student) {
             const today = new Date(); today.setHours(0, 0, 0, 0);
             const cutoffDay = parseInt(student.fechaCorte) || 5;
-            const nextDueDate = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
-            if (today > nextDueDate) nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-            if (!student.pagos || student.pagos.length === 0) return { status: 'overdue', text: 'Sin pagos' };
+            
+            let relevantCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (today.getDate() < cutoffDay) relevantCutoff.setMonth(relevantCutoff.getMonth() - 1);
+            
+            let nextCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (today.getDate() > cutoffDay) nextCutoff.setMonth(nextCutoff.getMonth() + 1);
+            
+            if (!student.pagos || student.pagos.length === 0) {
+                const daysToNext = Math.ceil((nextCutoff - today) / (1000 * 60 * 60 * 24));
+                return daysToNext <= 5 ? { status: 'pending', text: 'Por vencer' } : { status: 'overdue', text: 'Sin pagos' };
+            }
+            
             const lastPayment = student.pagos[student.pagos.length - 1];
             const lastPaymentDate = lastPayment.fecha.toDate ? lastPayment.fecha.toDate() : new Date(lastPayment.fecha);
-            if (lastPaymentDate >= nextDueDate) return { status: 'paid', text: 'Al día' };
-            const currentMonthCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
-            if (lastPaymentDate < currentMonthCutoff) return { status: 'overdue', text: 'Vencido' };
-            const daysUntilDue = Math.ceil((nextDueDate - today) / (1000 * 60 * 60 * 24));
-            if (daysUntilDue <= 7) return { status: 'pending', text: 'Por vencer' };
-            return { status: 'paid', text: 'Al día' };
+            lastPaymentDate.setHours(0, 0, 0, 0);
+            
+            if (lastPaymentDate >= relevantCutoff) return { status: 'paid', text: 'Al día' };
+            
+            const daysToNext = Math.ceil((nextCutoff - today) / (1000 * 60 * 60 * 24));
+            if (daysToNext <= 5) return { status: 'pending', text: 'Por vencer' };
+            
+            return { status: 'overdue', text: 'Vencido' };
         }
 
         function renderDashboard() {
