@@ -5,41 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Roller Vibes MX - Panel Admin</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
-    <!-- ✅ NUEVO: Librería para generar imagen del recibo -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Poppins', sans-serif; background: #F8F9FA; padding: 1rem; padding-bottom: 80px; }
-        
         :root {
-            --primary-color: #00B4D8;
-            --secondary-color: #03045E;
-            --accent-color: #FF006E;
-            --warning-color: #FFBE0B;
-            --success-color: #06D6A0;
-            --danger-color: #EF476F;
+            --primary-color: #00B4D8; --secondary-color: #03045E; --accent-color: #FF006E;
+            --warning-color: #FFBE0B; --success-color: #06D6A0; --danger-color: #EF476F;
         }
-        
         .header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
         .header-info h1 { font-size: 1.3rem; margin-bottom: 0.3rem; }
         .header-info p { font-size: 0.8rem; opacity: 0.8; }
         .btn-logout { background: var(--danger-color); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.85rem; }
         .btn-logout:hover { background: #D63A5E; }
-        
         .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
         .tab-btn { flex: 1; min-width: 100px; padding: 0.8rem; border: none; background: white; color: var(--secondary-color); border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; }
         .tab-btn.active { background: var(--accent-color); color: white; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        
         .form-group { margin-bottom: 1rem; }
         .form-group label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.9rem; color: var(--secondary-color); }
         .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 0.9rem; }
         .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary-color); }
         .btn-save { background: var(--success-color); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; font-size: 1rem; }
         .btn-save:hover { background: #05B88A; }
-        .btn-secondary { background: var(--primary-color); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; font-size: 1rem; margin-top: 0.5rem; }
-        
         .student-card { background: white; padding: 1rem; border-radius: 10px; display: flex; align-items: center; gap: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 0.8rem; flex-wrap: wrap; }
         .student-photo { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #eee; }
         .student-info { flex: 1; min-width: 200px; }
@@ -49,13 +38,10 @@
         .status-paid { background: var(--success-color); color: white; }
         .status-pending { background: var(--warning-color); color: var(--text-color); }
         .status-overdue { background: var(--danger-color); color: white; }
-        .status-pendiente { background: #FFA500; color: white; }
-        
         .btn-delete { background: var(--danger-color); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; margin-left: 0.5rem; }
         .btn-edit { background: var(--primary-color); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
         .btn-validate { background: var(--success-color); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
         .btn-receipt { background: var(--secondary-color); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; margin-left: 0.5rem; }
-        
         .login-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--secondary-color); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
         .login-box { background: white; padding: 2rem; border-radius: 15px; text-align: center; width: 100%; max-width: 380px; }
         .login-box h2 { margin-bottom: 1.5rem; color: var(--secondary-color); }
@@ -65,34 +51,20 @@
         .loading { text-align: center; padding: 2rem; color: #666; }
         .auth-toggle { margin-top: 1rem; font-size: 0.9rem; color: #666; }
         .auth-toggle span { color: var(--accent-color); cursor: pointer; font-weight: 600; text-decoration: underline; }
-        
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
         .stat-card { background: white; padding: 1.2rem; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .stat-value { font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem; }
         .stat-label { color: #666; font-size: 0.85rem; }
-        
         .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 1rem; }
         .modal.show { display: flex; }
         .modal-content { background: white; border-radius: 15px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem; position: relative; }
         .modal-close { position: absolute; top: 15px; right: 15px; background: var(--danger-color); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; }
         .modal-content h2 { color: var(--secondary-color); margin-bottom: 1rem; }
-        
         .user-badge { background: var(--primary-color); color: white; padding: 0.2rem 0.6rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600; }
         .pending-payment-card { background: #FFF3CD; border-left: 4px solid #FFA500; }
         .validated-payment-card { background: #D4EDDA; border-left: 4px solid var(--success-color); }
-        
-        /* ✅ NUEVO: Botón de instalación PWA */
         .install-btn { display: none; position: fixed; bottom: 20px; left: 20px; background: var(--secondary-color); color: white; border: none; padding: 1rem 1.5rem; border-radius: 50px; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 999; font-family: 'Poppins', sans-serif; }
-        
-        /* ✅ NUEVO: Estilos del Recibo Digital */
-        #receipt-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 10px;
-            border: 2px dashed var(--primary-color);
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
+        #receipt-content { background: white; padding: 2rem; border-radius: 10px; border: 2px dashed var(--primary-color); text-align: center; margin-bottom: 1.5rem; }
         .receipt-header { border-bottom: 2px solid var(--secondary-color); padding-bottom: 1rem; margin-bottom: 1rem; }
         .receipt-header h3 { color: var(--secondary-color); font-size: 1.2rem; margin-bottom: 0.3rem; }
         .receipt-header p { font-size: 0.85rem; color: var(--text-light); margin: 0.2rem 0; }
@@ -103,11 +75,9 @@
         .receipt-details .value { font-weight: 600; color: var(--secondary-color); }
         .receipt-total { font-size: 1.3rem; font-weight: 700; color: var(--success-color); margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--secondary-color); }
         .receipt-footer { margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-light); }
-        
         .receipt-actions { display: flex; gap: 1rem; margin-top: 1rem; }
         .btn-download { flex: 1; background: var(--primary-color); color: white; border: none; padding: 0.8rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; }
         .btn-whatsapp { flex: 1; background: #25d366; color: white; border: none; padding: 0.8rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; }
-        
         @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
     </style>
     <link rel="manifest" href="manifest-admin.json">
@@ -193,11 +163,10 @@
             </div>
         </div>
         
-        <!-- ✅ NUEVO: Botón de instalación PWA -->
         <button class="install-btn" id="install-btn">📲 Instalar App</button>
     </div>
 
-    <!-- Modal para Agregar/Editar Alumno -->
+    <!-- Modales (Student, Payment, Validate, Receipt) -->
     <div id="student-modal" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="window.closeStudentModal()">✕</button>
@@ -216,7 +185,6 @@
         </div>
     </div>
 
-    <!-- Modal para Registrar Pago -->
     <div id="payment-modal" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="window.closePaymentModal()">✕</button>
@@ -231,7 +199,6 @@
         </div>
     </div>
 
-    <!-- Modal para validar pago pendiente -->
     <div id="validate-payment-modal" class="modal">
         <div class="modal-content">
             <button class="modal-close" onclick="window.closeValidatePaymentModal()">✕</button>
@@ -243,12 +210,10 @@
         </div>
     </div>
 
-    <!-- ✅ NUEVO: Modal de Recibo Digital -->
     <div id="receipt-modal" class="modal">
         <div class="modal-content" style="max-width: 400px;">
             <button class="modal-close" onclick="window.closeReceiptModal()">✕</button>
             <h2 style="margin-bottom: 1rem; color: var(--secondary-color); text-align: center;">📄 Recibo de Pago</h2>
-            
             <div id="receipt-content">
                 <div class="receipt-header">
                     <h3 id="receipt-school-name">Roller Vibes MX</h3>
@@ -266,12 +231,8 @@
                     <div><span class="label">Método de pago:</span><span class="value" id="receipt-method">--</span></div>
                 </div>
                 <div class="receipt-total" id="receipt-amount">$0.00 MXN</div>
-                <div class="receipt-footer">
-                    <p>Validado por: Administración</p>
-                    <p>¡Gracias por tu pago! 🛼</p>
-                </div>
+                <div class="receipt-footer"><p>Validado por: Administración</p><p>¡Gracias por tu pago! 🛼</p></div>
             </div>
-
             <div class="receipt-actions">
                 <button class="btn-download" onclick="window.downloadReceipt()">📥 Descargar Imagen</button>
                 <button class="btn-whatsapp" onclick="window.shareReceiptWhatsApp()">💬 Enviar por WhatsApp</button>
@@ -296,38 +257,16 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
-
         firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
 
-        let currentUserId = null;
-        let students = [];
-        let parents = [];
-        let payments = [];
-        let pendingPayments = [];
-        let isLoginMode = true;
-        let currentValidatePaymentId = null;
-        let audioContext = null;
-        let currentReceiptPayment = null; // ✅ NUEVO: Para el recibo
-        let schoolConfig = {}; // ✅ NUEVO: Para datos del recibo
-        let deferredPrompt; // ✅ NUEVO: Para el botón de instalación
+        let currentUserId = null, students = [], parents = [], payments = [], pendingPayments = [];
+        let isLoginMode = true, currentValidatePaymentId = null, audioContext = null;
+        let currentReceiptPayment = null, schoolConfig = {}, deferredPrompt;
 
-        // ✅ NUEVO: Lógica del botón de instalación PWA
         const installBtn = document.getElementById('install-btn');
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            installBtn.style.display = 'block';
-        });
-
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'block'; });
         installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    installBtn.style.display = 'none';
-                }
-                deferredPrompt = null;
-            }
+            if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') installBtn.style.display = 'none'; deferredPrompt = null; }
         });
 
         document.addEventListener('click', () => {
@@ -340,38 +279,27 @@
             try {
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
-                oscillator.connect(gainNode);
-                gainNode.connect(audioContext.destination);
-                
+                oscillator.connect(gainNode); gainNode.connect(audioContext.destination);
                 oscillator.type = 'sine';
                 oscillator.frequency.setValueAtTime(660, audioContext.currentTime);
                 oscillator.frequency.exponentialRampToValueAtTime(1090, audioContext.currentTime + 0.2);
-                
                 gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
                 gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-                
                 oscillator.start(audioContext.currentTime);
                 oscillator.stop(audioContext.currentTime + 0.3);
-            } catch (e) {
-                console.log('Error al reproducir sonido:', e);
-            }
+            } catch (e) { console.log('Error sonido:', e); }
         }
+
         auth.onAuthStateChanged(async (user) => {
             if (user) {
                 currentUserId = user.uid;
                 const userDoc = await db.collection('usuarios').doc(user.uid).get();
-                if (!userDoc.exists || userDoc.data().role !== 'admin') {
-                    alert('⚠️ Acceso denegado. Solo administradores.');
-                    auth.signOut(); return;
-                }
+                if (!userDoc.exists || userDoc.data().role !== 'admin') { alert('⚠️ Acceso denegado.'); auth.signOut(); return; }
                 document.getElementById('user-email-display').textContent = user.email + ' (Administrador)';
                 document.getElementById('login-screen').classList.add('hidden');
                 document.getElementById('admin-panel').classList.remove('hidden');
-                
-                // ✅ NUEVO: Cargar config para el recibo
                 const configDoc = await db.collection('configuracion').doc('escuela').get();
                 if (configDoc.exists) schoolConfig = configDoc.data();
-                
                 setupRealTimeListeners();
             } else {
                 currentUserId = null;
@@ -388,14 +316,12 @@
             document.getElementById('auth-error').style.display = 'none';
         }
         window.togglePasswordVisibility = function() {
-            const p = document.getElementById('auth-password');
-            p.type = p.type === 'password' ? 'text' : 'password';
+            const p = document.getElementById('auth-password'); p.type = p.type === 'password' ? 'text' : 'password';
         }
         window.handleAuth = async function() {
             const email = document.getElementById('auth-email').value.trim();
             const password = document.getElementById('auth-password').value;
-            const errorEl = document.getElementById('auth-error');
-            const btn = document.getElementById('auth-btn');
+            const errorEl = document.getElementById('auth-error'), btn = document.getElementById('auth-btn');
             if (!email || !password) { errorEl.textContent = 'Ingresa correo y contraseña.'; errorEl.style.display = 'block'; return; }
             btn.textContent = 'Procesando...'; btn.disabled = true; errorEl.style.display = 'none';
             try {
@@ -406,9 +332,8 @@
                 }
             } catch (error) {
                 let msg = 'Error de autenticación.';
-                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') msg = 'Correo o contraseña incorrectos.';
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') msg = 'Credenciales incorrectas.';
                 if (error.code === 'auth/email-already-in-use') msg = 'Este correo ya está registrado.';
-                if (error.code === 'auth/weak-password') msg = 'La contraseña debe tener al menos 6 caracteres.';
                 errorEl.textContent = msg; errorEl.style.display = 'block';
             } finally { btn.textContent = isLoginMode ? 'Entrar' : 'Registrarme como Admin'; btn.disabled = false; }
         }
@@ -439,27 +364,35 @@
                 renderPendingPayments(); renderDashboard();
                 if (pendingPayments.length > oldLength && oldLength >= 0) playNotificationSound();
             });
-            
-            // ✅ NUEVO: Escuchar cambios en config para actualizar el recibo en tiempo real
-            db.collection('configuracion').doc('escuela').onSnapshot(doc => {
-                if (doc.exists) schoolConfig = doc.data();
-            });
+            db.collection('configuracion').doc('escuela').onSnapshot(doc => { if (doc.exists) schoolConfig = doc.data(); });
         }
 
+        // ✅ CORREGIDO: Lógica robusta que no marca como vencido un pago hecho antes del corte
         function getPaymentStatus(student) {
             const today = new Date(); today.setHours(0, 0, 0, 0);
             const cutoffDay = parseInt(student.fechaCorte) || 5;
-            const nextDueDate = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
-            if (today > nextDueDate) nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-            if (!student.pagos || student.pagos.length === 0) return { status: 'overdue', text: 'Sin pagos' };
+            
+            let relevantCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (today.getDate() < cutoffDay) relevantCutoff.setMonth(relevantCutoff.getMonth() - 1);
+            
+            let nextCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (today.getDate() > cutoffDay) nextCutoff.setMonth(nextCutoff.getMonth() + 1);
+            
+            if (!student.pagos || student.pagos.length === 0) {
+                const daysToNext = Math.ceil((nextCutoff - today) / (1000 * 60 * 60 * 24));
+                return daysToNext <= 5 ? { status: 'pending', text: 'Por vencer' } : { status: 'overdue', text: 'Sin pagos' };
+            }
+            
             const lastPayment = student.pagos[student.pagos.length - 1];
             const lastPaymentDate = lastPayment.fecha.toDate ? lastPayment.fecha.toDate() : new Date(lastPayment.fecha);
-            if (lastPaymentDate >= nextDueDate) return { status: 'paid', text: 'Al día' };
-            const currentMonthCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
-            if (lastPaymentDate < currentMonthCutoff) return { status: 'overdue', text: 'Vencido' };
-            const daysUntilDue = Math.ceil((nextDueDate - today) / (1000 * 60 * 60 * 24));
-            if (daysUntilDue <= 7) return { status: 'pending', text: 'Por vencer' };
-            return { status: 'paid', text: 'Al día' };
+            lastPaymentDate.setHours(0, 0, 0, 0);
+            
+            if (lastPaymentDate >= relevantCutoff) return { status: 'paid', text: 'Al día' };
+            
+            const daysToNext = Math.ceil((nextCutoff - today) / (1000 * 60 * 60 * 24));
+            if (daysToNext <= 5) return { status: 'pending', text: 'Por vencer' };
+            
+            return { status: 'overdue', text: 'Vencido' };
         }
 
         function renderDashboard() {
@@ -534,10 +467,7 @@
                 const isPending = payment.estado === 'pendiente';
                 const card = document.createElement('div');
                 card.className = `student-card ${isPending ? 'pending-payment-card' : 'validated-payment-card'}`;
-                
-                // ✅ NUEVO: Botón de recibo solo si está validado
                 const receiptBtn = !isPending ? `<button class="btn-receipt" onclick="window.openReceiptModalById('${payment.id}')">📄 Recibo</button>` : '';
-                
                 card.innerHTML = `
                     <div class="student-info">
                         <div class="student-name">${student?.nombre || payment.alumnoNombre || 'Alumno eliminado'}</div>
@@ -624,10 +554,8 @@
         }
         window.saveStudent = async function() {
             const editId = document.getElementById('edit-student-id').value;
-            const name = document.getElementById('student-name').value;
-            const level = document.getElementById('student-level').value;
-            const padreId = document.getElementById('student-parent-select').value;
-            const startDate = document.getElementById('student-start-date').value;
+            const name = document.getElementById('student-name').value, level = document.getElementById('student-level').value;
+            const padreId = document.getElementById('student-parent-select').value, startDate = document.getElementById('student-start-date').value;
             const cutoffDate = document.getElementById('student-cutoff-date').value;
             if (!name || !padreId || !startDate) { alert('Completa todos los campos.'); return; }
             try {
@@ -638,6 +566,7 @@
             } catch (error) { alert('Error: ' + error.message); }
         }
         window.deleteStudent = async function(id) { if (confirm('¿Eliminar este alumno?')) { await db.collection('alumnos').doc(id).delete(); } }
+        
         window.openPaymentModal = function() {
             const select = document.getElementById('payment-student');
             select.innerHTML = students.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
@@ -655,10 +584,11 @@
             if (!studentId || !amount || !date) { alert('Completa todos los campos.'); return; }
             const student = students.find(s => s.id === studentId); if (!student) return;
             try {
-                const paymentData = { alumnoId: studentId, alumnoNombre: student.nombre, monto: amount, fecha: new Date(date), metodo: method, registradoPor: currentUserId, estado: 'validado', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+                const safeDate = new Date(date + 'T12:00:00');
+                const paymentData = { alumnoId: studentId, alumnoNombre: student.nombre, monto: amount, fecha: safeDate, metodo: method, registradoPor: currentUserId, estado: 'validado', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
                 await db.collection('pagos').add(paymentData);
                 const updatedPagos = student.pagos || [];
-                updatedPagos.push({ monto: amount, fecha: new Date(date), metodo: method });
+                updatedPagos.push({ monto: amount, fecha: safeDate, metodo: method, estado: 'validado' });
                 await db.collection('alumnos').doc(studentId).update({ pagos: updatedPagos });
                 window.closePaymentModal(); alert('✅ Pago registrado correctamente.');
             } catch (error) { alert('Error: ' + error.message); }
@@ -700,7 +630,6 @@
         }
         window.closeValidatePaymentModal = function() { document.getElementById('validate-payment-modal').classList.remove('show'); currentValidatePaymentId = null; }
 
-        // ✅ NUEVO: Lógica de validación con generación de folio
         window.validatePayment = async function() {
             const amount = parseFloat(document.getElementById('validate-amount').value);
             const date = document.getElementById('validate-date').value;
@@ -712,7 +641,6 @@
                 const originalMethod = payment ? payment.metodo : 'Efectivo';
                 const cleanMethod = originalMethod.replace(' - Pendiente de validación', '').trim();
                 
-                // ✅ Generar Folio
                 const months = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
                 const now = new Date();
                 const currentPeriod = `${months[now.getMonth()]}${now.getFullYear().toString().slice(-2)}`;
@@ -722,28 +650,19 @@
                 let currentFolio = configData.ultimoFolio || { periodo: currentPeriod, numero: 1000 };
                 
                 let newNumero = 1001;
-                if (currentFolio.periodo === currentPeriod) {
-                    newNumero = currentFolio.numero + 1;
-                }
+                if (currentFolio.periodo === currentPeriod) newNumero = currentFolio.numero + 1;
                 
                 const newFolioStr = `RV-${currentPeriod}-${newNumero}`;
                 const fechaEmision = new Date();
                 
-                // Actualizar config con nuevo folio
-                await db.collection('configuracion').doc('escuela').set({
-                    ...configData,
-                    ultimoFolio: { periodo: currentPeriod, numero: newNumero }
-                }, { merge: true });
+                await db.collection('configuracion').doc('escuela').set({ ...configData, ultimoFolio: { periodo: currentPeriod, numero: newNumero } }, { merge: true });
                 
-                // Actualizar pago
+                // ✅ CORREGIDO: Usar mediodía para evitar problemas de zona horaria
+                const safeDate = new Date(date + 'T12:00:00');
+                
                 await db.collection('pagos').doc(currentValidatePaymentId).update({
-                    monto: amount,
-                    fecha: new Date(date),
-                    metodo: cleanMethod,
-                    estado: 'validado',
-                    folio: newFolioStr,
-                    fechaEmision: fechaEmision,
-                    validadoPor: currentUserId,
+                    monto: amount, fecha: safeDate, metodo: cleanMethod, estado: 'validado',
+                    folio: newFolioStr, fechaEmision: fechaEmision, validadoPor: currentUserId,
                     validadoEn: firebase.firestore.FieldValue.serverTimestamp()
                 });
                 
@@ -753,9 +672,9 @@
                         const updatedPagos = student.pagos || [];
                         const pendingIndex = updatedPagos.findIndex(p => p.estado === 'pendiente');
                         if (pendingIndex !== -1) {
-                            updatedPagos[pendingIndex] = { monto: amount, fecha: new Date(date), metodo: cleanMethod, estado: 'validado', folio: newFolioStr, fechaEmision: fechaEmision };
+                            updatedPagos[pendingIndex] = { monto: amount, fecha: safeDate, metodo: cleanMethod, estado: 'validado', folio: newFolioStr, fechaEmision: fechaEmision };
                         } else {
-                            updatedPagos.push({ monto: amount, fecha: new Date(date), metodo: cleanMethod, estado: 'validado', folio: newFolioStr, fechaEmision: fechaEmision });
+                            updatedPagos.push({ monto: amount, fecha: safeDate, metodo: cleanMethod, estado: 'validado', folio: newFolioStr, fechaEmision: fechaEmision });
                         }
                         await db.collection('alumnos').doc(payment.alumnoId).update({ pagos: updatedPagos });
                     }
@@ -766,22 +685,18 @@
             } catch (error) { alert('Error al validar: ' + error.message); }
         }
 
-        // ✅ NUEVO: Funciones del Recibo Digital
         window.openReceiptModalById = function(paymentId) {
             const payment = payments.find(p => p.id === paymentId);
             if (!payment || payment.estado !== 'validado') return;
-            
             currentReceiptPayment = payment;
             const student = students.find(s => s.id === payment.alumnoId);
             const parent = parents.find(p => p.id === payment.padreId);
-            
             const fechaEmision = payment.fechaEmision ? (payment.fechaEmision.toDate ? payment.fechaEmision.toDate() : new Date(payment.fechaEmision)) : new Date();
             
             document.getElementById('receipt-school-name').textContent = schoolConfig.schoolName || 'Roller Vibes MX';
             document.getElementById('receipt-school-slogan').textContent = schoolConfig.slogan || 'Escuela de Patinaje';
             document.getElementById('receipt-school-address').textContent = '📍 ' + (schoolConfig.address || 'Dirección no configurada');
             document.getElementById('receipt-school-phone').textContent = '📞 ' + (schoolConfig.phone || 'Teléfono no configurado');
-            
             document.getElementById('receipt-folio').textContent = `Folio: ${payment.folio || 'N/A'}`;
             document.getElementById('receipt-date').textContent = fechaEmision.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
             document.getElementById('receipt-student').textContent = student?.nombre || payment.alumnoNombre || 'N/A';
@@ -789,15 +704,9 @@
             document.getElementById('receipt-parent').textContent = parent?.nombre || parent?.email || 'N/A';
             document.getElementById('receipt-method').textContent = payment.metodo || 'N/A';
             document.getElementById('receipt-amount').textContent = `$${(payment.monto || 0).toFixed(2)} MXN`;
-            
             document.getElementById('receipt-modal').classList.add('show');
         }
-        
-        window.closeReceiptModal = function() {
-            document.getElementById('receipt-modal').classList.remove('show');
-            currentReceiptPayment = null;
-        }
-
+        window.closeReceiptModal = function() { document.getElementById('receipt-modal').classList.remove('show'); currentReceiptPayment = null; }
         window.downloadReceipt = function() {
             const element = document.getElementById('receipt-content');
             html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
@@ -807,19 +716,14 @@
                 link.click();
             });
         }
-
         window.shareReceiptWhatsApp = function() {
             if (!currentReceiptPayment) return;
             const student = students.find(s => s.id === currentReceiptPayment.alumnoId);
             const parent = parents.find(p => p.id === currentReceiptPayment.padreId);
             const fecha = currentReceiptPayment.fechaEmision ? (currentReceiptPayment.fechaEmision.toDate ? currentReceiptPayment.fechaEmision.toDate() : new Date(currentReceiptPayment.fechaEmision)).toLocaleDateString('es-MX') : 'N/A';
-            
             const text = `🛼 *ROLLER VIBES MX LA PAZ*\nRecibo de Pago\n\n📋 Folio: ${currentReceiptPayment.folio || 'N/A'}\n📅 Fecha: ${fecha}\n\n👤 Deportista: ${student?.nombre || 'N/A'}\n🎯 Nivel: ${student?.nivel || 'N/A'}\n👨‍👩‍👧 Tutor: ${parent?.nombre || parent?.email || 'N/A'}\n\n💰 Concepto: Mensualidad de patinaje\n💳 Método: ${currentReceiptPayment.metodo || 'N/A'}\n✅ Monto pagado: $${(currentReceiptPayment.monto || 0).toFixed(2)} MXN\n\n¡Gracias por tu pago! 🛼`;
-            
-            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-            window.open(url, '_blank');
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
-
         window.saveConfig = async function() {
             const config = {
                 schoolName: document.getElementById('cfg-school-name').value,
@@ -828,10 +732,8 @@
                 phone: document.getElementById('cfg-phone').value,
                 paymentLink: document.getElementById('cfg-payment-link').value
             };
-            try {
-                await db.collection('configuracion').doc('escuela').set(config, { merge: true });
-                alert('✅ Configuración guardada.');
-            } catch (error) { alert('Error: ' + error.message); }
+            try { await db.collection('configuracion').doc('escuela').set(config, { merge: true }); alert('✅ Configuración guardada.'); } 
+            catch (error) { alert('Error: ' + error.message); }
         }
 
         document.getElementById('student-modal').addEventListener('click', function(e) { if (e.target === this) window.closeStudentModal(); });
