@@ -81,6 +81,9 @@
         .pending-payment-card { background: #FFF3CD; border-left: 4px solid #FFA500; }
         .validated-payment-card { background: #D4EDDA; border-left: 4px solid var(--success-color); }
         
+        /* ✅ NUEVO: Botón de instalación PWA */
+        .install-btn { display: none; position: fixed; bottom: 20px; left: 20px; background: var(--secondary-color); color: white; border: none; padding: 1rem 1.5rem; border-radius: 50px; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 999; font-family: 'Poppins', sans-serif; }
+        
         /* ✅ NUEVO: Estilos del Recibo Digital */
         #receipt-content {
             background: white;
@@ -189,6 +192,9 @@
                 <button class="btn-save" onclick="window.saveConfig()">💾 Guardar Configuración</button>
             </div>
         </div>
+        
+        <!-- ✅ NUEVO: Botón de instalación PWA -->
+        <button class="install-btn" id="install-btn">📲 Instalar App</button>
     </div>
 
     <!-- Modal para Agregar/Editar Alumno -->
@@ -303,6 +309,26 @@
         let audioContext = null;
         let currentReceiptPayment = null; // ✅ NUEVO: Para el recibo
         let schoolConfig = {}; // ✅ NUEVO: Para datos del recibo
+        let deferredPrompt; // ✅ NUEVO: Para el botón de instalación
+
+        // ✅ NUEVO: Lógica del botón de instalación PWA
+        const installBtn = document.getElementById('install-btn');
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'block';
+        });
+
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    installBtn.style.display = 'none';
+                }
+                deferredPrompt = null;
+            }
+        });
 
         document.addEventListener('click', () => {
             if (!audioContext) { audioContext = new (window.AudioContext || window.webkitAudioContext)(); }
