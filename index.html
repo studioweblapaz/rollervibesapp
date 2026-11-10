@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roller Vibes MX La Paz</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00B4D8">
+    <link rel="icon" href="./logo-192.png">
+    <link rel="apple-touch-icon" href="./logo.png">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary-color: #00B4D8; --secondary-color: #03045E; --accent-color: #FF006E;
+            --warning-color: #FFBE0B; --success-color: #06D6A0; --danger-color: #EF476F;
+            --background-color: #F8F9FA; --card-background: #FFFFFF; --text-color: #1A1A1A; --text-light: #6C757D;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--background-color); color: var(--text-color); line-height: 1.6; padding-bottom: 100px; }
+        
+        .header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; text-align: center; padding: 2rem 1rem; }
+        .logo { font-size: 3rem; margin-bottom: 0.5rem; }
+        .logo img { max-width: 100px; max-height: 100px; border-radius: 20px; background: white; padding: 5px; }
+        .app-name { font-size: 2rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .tagline { font-size: 1rem; opacity: 0.9; }
+        .user-info { margin-top: 1rem; font-size: 0.9rem; opacity: 0.9; display: flex; flex-direction: column; align-items: center; gap: 0.5rem; }
+        .user-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: center; }
+        .btn-logout-header { background: var(--danger-color); color: white; border: none; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.85rem; }
+        .btn-notif-header { background: var(--primary-color); color: white; border: none; padding: 0.5rem 1rem; border-radius: 20px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.85rem; }
+        
+        .login-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+        .login-box { background: white; padding: 2rem; border-radius: 15px; text-align: center; width: 100%; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); }
+        .login-box h2 { color: var(--secondary-color); margin-bottom: 0.5rem; }
+        .login-box p { color: var(--text-light); margin-bottom: 1.5rem; font-size: 0.9rem; }
+        .login-box input { width: 100%; padding: 0.8rem; border: 2px solid #ddd; border-radius: 8px; margin-bottom: 1rem; font-size: 1rem; font-family: 'Poppins', sans-serif; }
+        .login-box input:focus { outline: none; border-color: var(--primary-color); }
+        .auth-toggle { margin-top: 1rem; font-size: 0.9rem; color: var(--text-light); }
+        .auth-toggle span { color: var(--accent-color); cursor: pointer; font-weight: 600; text-decoration: underline; }
+        
+        .dashboard { padding: 1rem; max-width: 1200px; margin: 0 auto; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: var(--card-background); padding: 1.2rem; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .stat-value { font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem; }
+        .stat-label { color: var(--text-light); font-size: 0.85rem; }
+        .stat-card.success .stat-value { color: var(--success-color); }
+        .stat-card.warning .stat-value { color: var(--warning-color); }
+        .stat-card.danger .stat-value { color: var(--danger-color); }
+        .stat-card.primary .stat-value { color: var(--primary-color); }
+        
+        .section-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 1rem; color: var(--secondary-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; }
+        .students-list { display: grid; gap: 1rem; }
+        .student-card { background: var(--card-background); padding: 1rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+        .student-photo { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #eee; }
+        .student-info { flex: 1; min-width: 200px; }
+        .student-name { font-weight: 700; color: var(--secondary-color); font-size: 1.1rem; }
+        .student-level { font-size: 0.85rem; color: var(--text-light); }
+        .student-due-date { font-size: 0.8rem; color: var(--text-light); margin-top: 0.3rem; }
+        .student-amount { font-size: 0.85rem; color: var(--success-color); font-weight: 600; margin-top: 0.3rem; }
+        .payment-status { padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .status-paid { background: var(--success-color); color: white; }
+        .status-pending { background: var(--warning-color); color: var(--text-color); }
+        .status-overdue { background: var(--danger-color); color: white; }
+        
+        .btn-edit { background: var(--primary-color); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+        .btn-delete { background: var(--danger-color); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+        .btn-receipt { background: var(--secondary-color); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+        
+        .loading { text-align: center; padding: 3rem; color: var(--text-light); font-size: 1.1rem; }
+        
+        /* ✅ CORREGIDO: Centrado perfecto del estado vacío */
+        .empty-state { 
+            text-align: center; 
+            padding: 4rem 1rem; 
+            color: var(--text-light);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 400px;
+        }
+        .empty-state-icon { 
+            font-size: 4rem; 
+            margin-bottom: 1.5rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+        }
+        .empty-state-icon img {
+            max-width: 120px;
+            max-height: 120px;
+            opacity: 0.3;
+            filter: grayscale(100%);
+            display: block;
+        }
+
+        .btn-add { background: var(--accent-color); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 25px; font-weight: 700; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.9rem; }
+        .btn-add:hover { background: #E60062; }
+        .install-btn { display: none; position: fixed; bottom: 20px; left: 20px; background: var(--secondary-color); color: white; border: none; padding: 1rem 1.5rem; border-radius: 50px; font-weight: 700; font-size: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); cursor: pointer; z-index: 999; font-family: 'Poppins', sans-serif; }
+        .whatsapp-fab { position: fixed; bottom: 20px; right: 20px; background: #25d366; color: white; width: 60px; height: 60px; border-radius: 50%; border: none; font-size: 2rem; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 999; display: none; align-items: center; justify-content: center; text-decoration: none; transition: transform 0.2s; }
+        .whatsapp-fab:hover { transform: scale(1.1); }
+        .footer { background: var(--secondary-color); color: white; text-align: center; padding: 2rem 1rem; margin-top: 2rem; }
+        .footer p { margin-bottom: 0.5rem; }
+        .footer-whatsapp-btn { display: inline-block; background: #25d366; color: white; padding: 0.8rem 1.5rem; border-radius: 50px; text-decoration: none; font-weight: 700; margin-top: 1rem; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 1rem; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 15px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem; position: relative; }
+        .modal-close { position: absolute; top: 15px; right: 15px; background: var(--danger-color); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; }
+        .modal-content h2 { color: var(--secondary-color); margin-bottom: 1rem; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.9rem; color: var(--secondary-color); }
+        .form-group input, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 0.9rem; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary-color); }
+        .btn-save { background: var(--success-color); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; font-size: 1rem; }
+        .btn-save:hover { background: #05B88A; }
+        .payment-option-btn { width: 100%; padding: 1.2rem; border: none; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; font-family: 'Poppins', sans-serif; margin-bottom: 1rem; transition: transform 0.2s, box-shadow 0.2s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .payment-option-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+        .btn-pay-online { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; }
+        .btn-pay-cash { background: linear-gradient(135deg, var(--success-color), #05B88A); color: white; }
+        .payment-student-info { background: var(--background-color); padding: 1rem; border-radius: 10px; margin-bottom: 1.5rem; text-align: center; }
+        .payment-student-info h3 { color: var(--secondary-color); margin-bottom: 0.3rem; }
+        .payment-student-info p { color: var(--text-light); font-size: 0.9rem; }
+        .payment-amount-display { font-size: 1.5rem; font-weight: 700; color: var(--success-color); margin-top: 0.5rem; }
+        .hidden { display: none !important; }
+        
+        #receipt-content { background: white; padding: 2rem; border-radius: 10px; border: 2px dashed var(--primary-color); text-align: center; margin-bottom: 1.5rem; }
+        .receipt-header { border-bottom: 2px solid var(--secondary-color); padding-bottom: 1rem; margin-bottom: 1rem; }
+        .receipt-header h3 { color: var(--secondary-color); font-size: 1.2rem; margin-bottom: 0.3rem; }
+        .receipt-header p { font-size: 0.85rem; color: var(--text-light); margin: 0.2rem 0; }
+        .receipt-folio { font-size: 1.1rem; font-weight: 700; color: var(--accent-color); margin: 1rem 0; }
+        .receipt-details { text-align: left; margin: 1.5rem 0; font-size: 0.9rem; }
+        .receipt-details div { margin-bottom: 0.5rem; display: flex; justify-content: space-between; }
+        .receipt-details .label { color: var(--text-light); }
+        .receipt-details .value { font-weight: 600; color: var(--secondary-color); }
+        .receipt-total { font-size: 1.3rem; font-weight: 700; color: var(--success-color); margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--secondary-color); }
+        .receipt-footer { margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-light); }
+        .receipt-actions { display: flex; gap: 1rem; margin-top: 1rem; }
+        .btn-download { flex: 1; background: var(--primary-color); color: white; border: none; padding: 0.8rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; }
+        .btn-whatsapp { flex: 1; background: #25d366; color: white; border: none; padding: 0.8rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; }
+        
+        @media (max-width: 768px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } .student-card { flex-direction: column; text-align: center; } }
+    </style>
+</head>
+<body>
+    <div class="login-screen" id="login-screen">
+        <div class="login-box">
+            <div class="logo" style="margin-bottom: 1rem;"><img src="./logo.png" alt="Roller Vibes MX" style="max-width: 80px;"></div>
+            <h2 id="auth-title">🛼 Bienvenido</h2>
+            <p id="auth-subtitle">Inicia sesión para gestionar a tus deportistas</p>
+            <input type="text" id="auth-name" placeholder="Tu nombre completo" style="display: none;">
+            <input type="email" id="auth-email" placeholder="Correo electrónico">
+            <input type="password" id="auth-password" placeholder="Contraseña">
+            <button class="btn-save" id="auth-btn" onclick="window.handleAuth()">Entrar</button>
+            <p id="auth-error" style="color: var(--danger-color); margin-top: 1rem; display: none; font-size: 0.9rem;"></p>
+            <p class="auth-toggle"><span id="auth-toggle-text" onclick="window.toggleAuthMode()">¿No tienes cuenta? Regístrate aquí</span></p>
+        </div>
+    </div>
+
+    <div id="main-panel" class="hidden">
+        <header class="header">
+            <div class="logo"><img src="./logo.png" alt="Roller Vibes MX"></div>
+            <h1 class="app-name" id="header-school-name">Roller Vibes MX</h1>
+            <p class="tagline" id="header-tagline">Escuela de Patinaje</p>
+            <div class="user-info">
+                <span id="user-name-display">Cargando...</span>
+                <div class="user-actions">
+                    <button id="btn-enable-notif" class="btn-notif-header" style="display: none;" onclick="window.enableNotifications()">🔔 Activar Recordatorios</button>
+                    <button class="btn-logout-header" onclick="window.logout()">Cerrar Sesión</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="dashboard">
+            <div id="loading" class="loading">Cargando datos...</div>
+            <div id="dashboard-content" style="display: none;">
+                <h2 class="section-title">📊 Resumen del Mes</h2>
+                <div class="stats-grid">
+                    <div class="stat-card success"><div class="stat-value" id="stat-paid">0</div><div class="stat-label">Al día</div></div>
+                    <div class="stat-card warning"><div class="stat-value" id="stat-pending">0</div><div class="stat-label">Por vencer</div></div>
+                    <div class="stat-card danger"><div class="stat-value" id="stat-overdue">0</div><div class="stat-label">Vencidos</div></div>
+                    <div class="stat-card primary"><div class="stat-value" id="stat-income">$0</div><div class="stat-label">Pagado este mes</div></div>
+                </div>
+                <h2 class="section-title"><span>🛼 Mis Deportistas</span><button class="btn-add" onclick="window.openStudentModal()">+ Agregar Deportista</button></h2>
+                <div id="students-container" class="students-list"></div>
+            </div>
+            
+            <!-- ✅ CORREGIDO: HTML limpio y centrado -->
+            <div id="empty-state" class="empty-state" style="display: none;">
+                <div class="empty-state-icon">
+                    <img src="./logo.png" alt="Roller Vibes MX">
+                </div>
+                <h3>No has registrado a ningún deportista aún</h3>
+                <p style="margin-bottom: 1.5rem;">Haz clic en el botón de abajo para comenzar.</p>
+                <button class="btn-add" onclick="window.openStudentModal()" style="font-size: 1rem; padding: 1rem 2rem;">+ Agregar Deportista</button>
+            </div>
+        </main>
+
+        <footer class="footer" id="main-footer">
+            <p id="footer-address">📍 Cargando dirección...</p>
+            <p id="footer-phone">📞 Cargando teléfono...</p>
+            <a id="footer-whatsapp-btn" href="#" target="_blank" class="footer-whatsapp-btn" style="display: none;">💬 Contactar por WhatsApp</a>
+        </footer>
+
+        <a id="whatsapp-fab" href="#" target="_blank" class="whatsapp-fab">
+            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.884-.001 2.225.651 3.891 1.746 5.634l-.999 3.648 3.742-.981zm11.387-5.464c-.074-.124-.272-.198-.57-.347-.297-.149-1.758-.868-2.031-.967-.272-.099-.47-.149-.669.149-.198.297-.768.967-.941 1.165-.173.198-.347.223-.644.074-.297-.149-1.255-.462-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.297-.347.446-.521.151-.172.2-.296.3-.495.099-.198.05-.372-.025-.521-.075-.148-.669-1.611-.916-2.206-.242-.579-.487-.501-.669-.51l-.57-.01c-.198 0-.52.074-.792.372s-1.04 1.016-1.04 2.479 1.065 2.876 1.213 3.074c.149.198 2.095 3.2 5.076 4.487.709.306 1.263.489 1.694.626.712.226 1.36.194 1.872.118.571-.085 1.758-.719 2.006-1.413.248-.695.248-1.29.173-1.414z"/></svg>
+        </a>
+        <button class="install-btn" id="install-btn">📲 Instalar App</button>
+    </div>
+
+    <!-- Modal para Agregar/Editar Deportista -->
+    <div id="student-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="window.closeStudentModal()">✕</button>
+            <h2 id="student-modal-title">Agregar Deportista</h2>
+            <input type="hidden" id="edit-student-id">
+            <div class="form-group"><label>Nombre Completo del Deportista *</label><input type="text" id="student-name" placeholder="Ej: Juan Pérez"></div>
+            <div class="form-group"><label>Nivel de Patinaje *</label>
+                <select id="student-level"><option value="Principiante">Principiante</option><option value="Intermedio">Intermedio</option><option value="Avanzado">Avanzado</option><option value="Freestyle">Freestyle</option></select>
+            </div>
+            <div class="form-group"><label>Nombre del Tutor/Contacto *</label><input type="text" id="student-parent" placeholder="Ej: María Pérez (Madre)"></div>
+            <div class="form-group"><label>Teléfono del Tutor *</label><input type="text" id="student-phone" placeholder="612 443 3992"></div>
+            <div class="form-group"><label>Fecha de Inicio *</label><input type="date" id="student-start-date"></div>
+            <div class="form-group"><label>Fecha de Corte Mensual *</label>
+                <select id="student-cutoff-date"><option value="5">Día 5 de cada mes</option><option value="20">Día 20 de cada mes</option></select>
+                <small style="color: var(--text-light); font-size: 0.8rem;">El pago deberá realizarse antes de esta fecha cada mes.</small>
+            </div>
+            <div class="form-group"><label>Monto Mensual ($) *</label><input type="number" id="student-amount" placeholder="Ej: 500" min="0" step="0.01"><small style="color: var(--text-light); font-size: 0.8rem;">Este monto se usará para validar los pagos automáticamente.</small></div>
+            <button class="btn-save" onclick="window.saveStudent()">Guardar</button>
+        </div>
+    </div>
+
+    <!-- Modal de Registrar Pago -->
+    <div id="payment-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="window.closePaymentModal()">✕</button>
+            <h2>💳 Registrar Pago</h2>
+            <div class="payment-student-info">
+                <h3 id="payment-student-name">Nombre del Deportista</h3>
+                <p id="payment-student-status">Estado: Sin pagos</p>
+                <div class="payment-amount-display" id="payment-student-amount">$0</div>
+                <p style="font-size: 0.8rem; margin-top: 0.3rem;">Monto mensual</p>
+            </div>
+            <p style="text-align: center; color: var(--text-light); margin-bottom: 1.5rem; font-size: 0.9rem;">Selecciona cómo deseas realizar el pago:</p>
+            <button class="payment-option-btn btn-pay-online" onclick="window.payOnline()">💳 Pagar en línea (Mercado Pago / Stripe)</button>
+            <button class="payment-option-btn btn-pay-cash" onclick="window.payCash()">💵 Pagar en efectivo (en la pista)</button>
+            <p style="text-align: center; color: var(--text-light); font-size: 0.8rem; margin-top: 1rem;">Al registrar el pago, se actualizará el estado de tu deportista.</p>
+        </div>
+    </div>
+
+    <!-- Modal de Recibo Digital -->
+    <div id="receipt-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <button class="modal-close" onclick="window.closeReceiptModal()">✕</button>
+            <h2 style="margin-bottom: 1rem; color: var(--secondary-color); text-align: center;">📄 Recibo de Pago</h2>
+            <div id="receipt-content">
+                <div class="receipt-header">
+                    <h3 id="receipt-school-name">Roller Vibes MX</h3>
+                    <p id="receipt-school-slogan">Escuela de Patinaje</p>
+                    <p id="receipt-school-address">📍 Dirección</p>
+                    <p id="receipt-school-phone">📞 Teléfono</p>
+                </div>
+                <div class="receipt-folio" id="receipt-folio">Folio: RV-NOV26-1001</div>
+                <div class="receipt-details">
+                    <div><span class="label">Fecha de emisión:</span><span class="value" id="receipt-date">--</span></div>
+                    <div><span class="label">Deportista:</span><span class="value" id="receipt-student">--</span></div>
+                    <div><span class="label">Nivel:</span><span class="value" id="receipt-level">--</span></div>
+                    <div><span class="label">Tutor:</span><span class="value" id="receipt-parent">--</span></div>
+                    <div><span class="label">Concepto:</span><span class="value">Mensualidad de patinaje</span></div>
+                    <div><span class="label">Método de pago:</span><span class="value" id="receipt-method">--</span></div>
+                </div>
+                <div class="receipt-total" id="receipt-amount">$0.00 MXN</div>
+                <div class="receipt-footer"><p>Validado por: Administración</p><p>¡Gracias por tu pago! 🛼</p></div>
+            </div>
+            <div class="receipt-actions">
+                <button class="btn-download" onclick="window.downloadReceipt()">📥 Descargar Imagen</button>
+                <button class="btn-whatsapp" onclick="window.shareReceiptWhatsApp()">💬 Enviar por WhatsApp</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWYeqLwrl8wcQ9LmFhvVjDCc6phlfxv5g", authDomain: "app-roller-vibes-mx-la-paz.firebaseapp.com",
+            projectId: "app-roller-vibes-mx-la-paz", storageBucket: "app-roller-vibes-mx-la-paz.firebasestorage.app",
+            messagingSenderId: "613299405976", appId: "1:613299405976:web:512f54a94012102f53bced"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
+
+        let currentUserId = null, currentUserData = null, students = [], deferredPrompt, isLoginMode = true, paymentLink = '', currentPaymentStudentId = null;
+        let currentReceiptPayment = null, schoolConfig = {};
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(r => console.log('SW registrado:', r)).catch(e => console.log('Error SW:', e));
+            });
+        }
+        const installBtn = document.getElementById('install-btn');
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'block'; });
+        installBtn.addEventListener('click', async () => {
+            if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') installBtn.style.display = 'none'; deferredPrompt = null; }
+        });
+
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                try {
+                    const userDoc = await db.collection('usuarios').doc(user.uid).get();
+                    if (userDoc.exists) {
+                        currentUserData = userDoc.data();
+                        document.getElementById('user-name-display').textContent = currentUserData.nombre || user.email;
+                    } else { document.getElementById('user-name-display').textContent = user.email; }
+                } catch (error) { document.getElementById('user-name-display').textContent = user.email; }
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('main-panel').classList.remove('hidden');
+                
+                const configDoc = await db.collection('configuracion').doc('escuela').get();
+                if (configDoc.exists) schoolConfig = configDoc.data();
+                
+                loadConfig(); loadStudents();
+            } else {
+                currentUserId = null; currentUserData = null;
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('main-panel').classList.add('hidden');
+                students = [];
+            }
+        });
+
+        window.toggleAuthMode = function() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-title').textContent = isLoginMode ? '🛼 Bienvenido' : '📝 Crear Cuenta';
+            document.getElementById('auth-subtitle').textContent = isLoginMode ? 'Inicia sesión para gestionar a tus deportistas' : 'Regístrate para comenzar';
+            document.getElementById('auth-btn').textContent = isLoginMode ? 'Entrar' : 'Registrarme';
+            document.getElementById('auth-toggle-text').textContent = isLoginMode ? '¿No tienes cuenta? Regístrate aquí' : '¿Ya tienes cuenta? Inicia sesión';
+            document.getElementById('auth-error').style.display = 'none';
+            document.getElementById('auth-name').style.display = isLoginMode ? 'none' : 'block';
+        }
+        window.handleAuth = async function() {
+            const email = document.getElementById('auth-email').value.trim(), password = document.getElementById('auth-password').value, name = document.getElementById('auth-name').value.trim();
+            const errorEl = document.getElementById('auth-error'), btn = document.getElementById('auth-btn');
+            if (!email || !password) { errorEl.textContent = 'Por favor ingresa correo y contraseña.'; errorEl.style.display = 'block'; return; }
+            if (!isLoginMode && !name) { errorEl.textContent = 'Por favor ingresa tu nombre.'; errorEl.style.display = 'block'; return; }
+            btn.textContent = 'Procesando...'; btn.disabled = true; errorEl.style.display = 'none';
+            try {
+                if (isLoginMode) { await auth.signInWithEmailAndPassword(email, password); } 
+                else {
+                    const uc = await auth.createUserWithEmailAndPassword(email, password);
+                    await db.collection('usuarios').doc(uc.user.uid).set({ email, nombre: name, role: 'padre', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                }
+            } catch (error) {
+                let msg = 'Error de autenticación.';
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') msg = 'Correo o contraseña incorrectos.';
+                if (error.code === 'auth/email-already-in-use') msg = 'Este correo ya está registrado.';
+                if (error.code === 'auth/weak-password') msg = 'La contraseña debe tener al menos 6 caracteres.';
+                if (error.code === 'auth/invalid-email') msg = 'El formato del correo no es válido.';
+                errorEl.textContent = msg; errorEl.style.display = 'block';
+            } finally { btn.textContent = isLoginMode ? 'Entrar' : 'Registrarme'; btn.disabled = false; }
+        }
+        window.logout = function() { if(confirm('¿Cerrar sesión?')) auth.signOut(); }
+
+        window.enableNotifications = function() {
+            if ("Notification" in window) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        document.getElementById('btn-enable-notif').style.display = 'none';
+                        checkUpcomingPayments();
+                        alert("✅ Recordatorios activados. Te avisaremos cuando un pago esté por vencer.");
+                    } else {
+                        alert("⚠️ Necesitas permitir las notificaciones en tu navegador para recibir recordatorios.");
+                    }
+                });
+            } else {
+                alert("⚠️ Tu navegador no soporta notificaciones.");
+            }
+        }
+
+        function checkUpcomingPayments() {
+            if (!("Notification" in window) || Notification.permission !== "granted") return;
+            if (sessionStorage.getItem('notified_payments_today')) return;
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            let notificationsToSend = [];
+
+            students.forEach(student => {
+                const cutoffDay = parseInt(student.fechaCorte) || 5;
+                const nextDueDate = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+                if (today > nextDueDate) nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+                
+                let needsPayment = false;
+                let statusText = "";
+                
+                if (!student.pagos || student.pagos.length === 0) {
+                    needsPayment = true;
+                    statusText = "Sin pagos registrados";
+                } else {
+                    const lastPayment = student.pagos[student.pagos.length - 1];
+                    const lastPaymentDate = lastPayment.fecha.toDate ? lastPayment.fecha.toDate() : new Date(lastPayment.fecha);
+                    
+                    if (lastPaymentDate < nextDueDate) {
+                        const daysUntilDue = Math.ceil((nextDueDate - today) / (1000 * 60 * 60 * 24));
+                        if (daysUntilDue < 0) {
+                            needsPayment = true;
+                            statusText = `Vencido desde hace ${Math.abs(daysUntilDue)} días`;
+                        } else if (daysUntilDue <= 5) {
+                            needsPayment = true;
+                            statusText = `Vence en ${daysUntilDue} días (${nextDueDate.toLocaleDateString('es-MX')})`;
+                        }
+                    }
+                }
+                
+                if (needsPayment) {
+                    notificationsToSend.push({
+                        name: student.nombre,
+                        status: statusText,
+                        amount: student.montoMensual || 0
+                    });
+                }
+            });
+
+            if (notificationsToSend.length > 0) {
+                notificationsToSend.forEach((item, index) => {
+                    setTimeout(() => {
+                        new Notification("🛼 Roller Vibes MX - Recordatorio de Pago", {
+                            body: `Deportista: ${item.name}\nEstado: ${item.status}\nMonto: $${item.amount}\n\nToca aquí para gestionar el pago.`,
+                            icon: "./logo-192.png",
+                            badge: "./logo-192.png"
+                        });
+                    }, index * 1500);
+                });
+                sessionStorage.setItem('notified_payments_today', 'true');
+            }
+        }
+
+        function loadConfig() {
+            db.collection('configuracion').doc('escuela').onSnapshot((doc) => {
+                if (doc.exists) {
+                    const config = doc.data();
+                    if (config.schoolName) document.getElementById('header-school-name').textContent = config.schoolName;
+                    if (config.slogan) document.getElementById('header-tagline').textContent = config.slogan;
+                    else document.getElementById('header-tagline').textContent = 'Escuela de Patinaje';
+                    if (config.address) document.getElementById('footer-address').textContent = '📍 ' + config.address;
+                    else document.getElementById('footer-address').textContent = '📍 Dirección no configurada';
+                    if (config.phone) {
+                        document.getElementById('footer-phone').textContent = '📞 ' + config.phone;
+                        const cleanPhone = config.phone.replace(/\D/g, '');
+                        const message = encodeURIComponent("Hola, me interesa información sobre las clases de patinaje en Roller Vibes MX.");
+                        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${message}`;
+                        document.getElementById('footer-whatsapp-btn').href = whatsappUrl;
+                        document.getElementById('footer-whatsapp-btn').style.display = 'inline-block';
+                        document.getElementById('whatsapp-fab').href = whatsappUrl;
+                        document.getElementById('whatsapp-fab').style.display = 'flex';
+                    } else {
+                        document.getElementById('footer-phone').textContent = '📞 Teléfono no configurado';
+                        document.getElementById('footer-whatsapp-btn').style.display = 'none';
+                        document.getElementById('whatsapp-fab').style.display = 'none';
+                    }
+                    paymentLink = config.paymentLink || '';
+                }
+            }, (error) => { console.error('Error al cargar configuración:', error); });
+        }
+
+        function loadStudents() {
+            db.collection('alumnos').where('padreId', '==', currentUserId).orderBy('nombre').onSnapshot((snapshot) => {
+                students = []; snapshot.forEach(doc => students.push({ id: doc.id, ...doc.data() }));
+                document.getElementById('loading').style.display = 'none';
+                if (students.length === 0) {
+                    document.getElementById('empty-state').style.display = 'block';
+                    document.getElementById('dashboard-content').style.display = 'none';
+                } else {
+                    document.getElementById('empty-state').style.display = 'none';
+                    document.getElementById('dashboard-content').style.display = 'block';
+                    renderDashboard(); renderStudents();
+                    
+                    if ("Notification" in window && Notification.permission === "granted") {
+                        checkUpcomingPayments();
+                    } else if ("Notification" in window && Notification.permission === "default") {
+                        document.getElementById('btn-enable-notif').style.display = 'inline-block';
+                    }
+                }
+            }, (error) => {
+                console.error('Error al cargar deportistas:', error);
+                document.getElementById('loading').textContent = 'Error al cargar datos. Verifica tu conexión.';
+            });
+        }
+
+        function getPaymentStatus(student) {
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const cutoffDay = parseInt(student.fechaCorte) || 5;
+            const nextDueDate = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (today > nextDueDate) nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+            if (!student.pagos || student.pagos.length === 0) return { status: 'overdue', text: 'Sin pagos' };
+            const lastPayment = student.pagos[student.pagos.length - 1];
+            const lastPaymentDate = lastPayment.fecha.toDate ? lastPayment.fecha.toDate() : new Date(lastPayment.fecha);
+            if (lastPaymentDate >= nextDueDate) return { status: 'paid', text: 'Al día' };
+            const currentMonthCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (lastPaymentDate < currentMonthCutoff) return { status: 'overdue', text: 'Vencido' };
+            const daysUntilDue = Math.ceil((nextDueDate - today) / (1000 * 60 * 60 * 24));
+            if (daysUntilDue <= 7) return { status: 'pending', text: 'Por vencer' };
+            return { status: 'paid', text: 'Al día' };
+        }
+
+        function renderDashboard() {
+            const today = new Date();
+            let paid = 0, pending = 0, overdue = 0, income = 0;
+            students.forEach(student => {
+                const ps = getPaymentStatus(student);
+                if (ps.status === 'paid') paid++; else if (ps.status === 'pending') pending++; else overdue++;
+                if (student.pagos) {
+                    student.pagos.forEach(pago => {
+                        const pd = pago.fecha.toDate ? pago.fecha.toDate() : new Date(pago.fecha);
+                        if (pd.getMonth() === today.getMonth() && pd.getFullYear() === today.getFullYear()) income += pago.monto || 0;
+                    });
+                }
+            });
+            document.getElementById('stat-paid').textContent = paid;
+            document.getElementById('stat-pending').textContent = pending;
+            document.getElementById('stat-overdue').textContent = overdue;
+            document.getElementById('stat-income').textContent = '$' + income.toLocaleString('es-MX');
+        }
+
+        function renderStudents() {
+            const container = document.getElementById('students-container');
+            container.innerHTML = '';
+            students.forEach(student => {
+                const ps = getPaymentStatus(student);
+                const cutoffDay = student.fechaCorte || 5;
+                const monthlyAmount = student.montoMensual || 0;
+                const card = document.createElement('div'); card.className = 'student-card';
+                const showPaymentButton = ps.status !== 'paid';
+                
+                const validatedPayments = (student.pagos || []).filter(p => p.estado === 'validado');
+                const latestValidated = validatedPayments.length > 0 ? validatedPayments[validatedPayments.length - 1] : null;
+                const receiptBtn = latestValidated ? `<button class="btn-receipt" onclick="window.openReceiptModalByStudent('${student.id}')">📄 Recibo</button>` : '';
+                
+                card.innerHTML = `
+                    <img src="${student.foto || './logo-192.png'}" alt="${student.nombre}" class="student-photo" onerror="this.src='./logo-192.png'">
+                    <div class="student-info">
+                        <div class="student-name">${student.nombre}</div>
+                        <div class="student-level">${student.nivel || 'Sin nivel'} • Corte: día ${cutoffDay}</div>
+                        <div class="student-due-date">Tutor: ${student.tutor || 'No especificado'} • ${student.telefono || 'Sin teléfono'}</div>
+                        ${monthlyAmount > 0 ? `<div class="student-amount">💰 Mensualidad: $${monthlyAmount}</div>` : ''}
+                    </div>
+                    <span class="payment-status status-${ps.status}">${ps.text}</span>
+                    ${showPaymentButton ? `<button class="btn-edit" style="background: var(--accent-color);" onclick="window.openPaymentModal('${student.id}')">💳 Registrar Pago</button>` : ''}
+                    ${receiptBtn}
+                    <button class="btn-edit" onclick="window.editStudent('${student.id}')">✏️</button>
+                    <button class="btn-delete" onclick="window.deleteStudent('${student.id}')">🗑️</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.openPaymentModal = function(studentId) {
+            const student = students.find(s => s.id === studentId); if (!student) return;
+            currentPaymentStudentId = studentId;
+            const ps = getPaymentStatus(student);
+            const monthlyAmount = student.montoMensual || 0;
+            document.getElementById('payment-student-name').textContent = student.nombre;
+            document.getElementById('payment-student-status').textContent = `Estado: ${ps.text}`;
+            document.getElementById('payment-student-amount').textContent = `$${monthlyAmount}`;
+            document.getElementById('payment-modal').classList.add('show');
+        }
+        window.closePaymentModal = function() { document.getElementById('payment-modal').classList.remove('show'); currentPaymentStudentId = null; }
+
+        window.payOnline = function() {
+            if (!paymentLink) { alert('⚠️ No hay un link de pago configurado. Contacta a la escuela.'); return; }
+            if (!currentPaymentStudentId) return;
+            const student = students.find(s => s.id === currentPaymentStudentId); if (!student) return;
+            const monthlyAmount = student.montoMensual || 0;
+            if (!confirm(`¿Confirmas que realizarás el pago en línea?\n\nDeportista: ${student.nombre}\nMonto: $${monthlyAmount}\n\nSerás redirigido a la plataforma de pago. El admin validará tu pago una vez confirmado.`)) return;
+            
+            const paymentData = { alumnoId: currentPaymentStudentId, alumnoNombre: student.nombre, padreId: currentUserId, monto: monthlyAmount, montoEsperado: monthlyAmount, fecha: new Date(), metodo: 'Link de Pago - Pendiente de validación', estado: 'pendiente', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+            db.collection('pagos').add(paymentData).then(() => {
+                const updatedPagos = student.pagos || [];
+                updatedPagos.push({ monto: monthlyAmount, fecha: new Date(), metodo: 'Link de Pago - Pendiente de validación', estado: 'pendiente' });
+                return db.collection('alumnos').doc(currentPaymentStudentId).update({ pagos: updatedPagos });
+            }).then(() => {
+                window.open(paymentLink, '_blank'); window.closePaymentModal();
+                setTimeout(() => { alert(`✅ Pago con link registrado por $${monthlyAmount}.\n\nCompleta el pago en la plataforma. El admin validará tu pago una vez confirmado.`); }, 500);
+            }).catch((error) => { alert('Error al registrar el pago: ' + error.message); });
+        }
+
+        window.payCash = function() {
+            if (!currentPaymentStudentId) return;
+            const student = students.find(s => s.id === currentPaymentStudentId); if (!student) return;
+            const monthlyAmount = student.montoMensual || 0;
+            if (!confirm(`¿Confirmas que pagarás en efectivo?\n\nDeportista: ${student.nombre}\nMonto: $${monthlyAmount}\n\nAcude a la pista y entrega el pago al instructor. El admin validará tu pago.`)) return;
+            
+            const paymentData = { alumnoId: currentPaymentStudentId, alumnoNombre: student.nombre, padreId: currentUserId, monto: monthlyAmount, montoEsperado: monthlyAmount, fecha: new Date(), metodo: 'Efectivo - Pendiente de validación', estado: 'pendiente', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+            db.collection('pagos').add(paymentData).then(() => {
+                const updatedPagos = student.pagos || [];
+                updatedPagos.push({ monto: monthlyAmount, fecha: new Date(), metodo: 'Efectivo - Pendiente de validación', estado: 'pendiente' });
+                return db.collection('alumnos').doc(currentPaymentStudentId).update({ pagos: updatedPagos });
+            }).then(() => {
+                window.closePaymentModal();
+                alert(`✅ Pago en efectivo registrado por $${monthlyAmount}.\n\nAcude a la pista para completar el pago. El admin validará tu pago.`);
+            }).catch((error) => { alert('Error al registrar el pago: ' + error.message); });
+        }
+
+        window.openStudentModal = function() {
+            document.getElementById('student-modal-title').textContent = 'Agregar Deportista';
+            document.getElementById('edit-student-id').value = '';
+            document.getElementById('student-name').value = '';
+            document.getElementById('student-level').value = 'Principiante';
+            document.getElementById('student-parent').value = '';
+            document.getElementById('student-phone').value = '';
+            document.getElementById('student-start-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('student-cutoff-date').value = '5';
+            document.getElementById('student-amount').value = '';
+            document.getElementById('student-modal').classList.add('show');
+        }
+        window.closeStudentModal = function() { document.getElementById('student-modal').classList.remove('show'); }
+        window.editStudent = function(id) {
+            const student = students.find(s => s.id === id); if (!student) return;
+            document.getElementById('student-modal-title').textContent = 'Editar Deportista';
+            document.getElementById('edit-student-id').value = student.id;
+            document.getElementById('student-name').value = student.nombre || '';
+            document.getElementById('student-level').value = student.nivel || 'Principiante';
+            document.getElementById('student-parent').value = student.tutor || '';
+            document.getElementById('student-phone').value = student.telefono || '';
+            document.getElementById('student-start-date').value = student.fechaInicio || '';
+            document.getElementById('student-cutoff-date').value = student.fechaCorte || '5';
+            document.getElementById('student-amount').value = student.montoMensual || '';
+            document.getElementById('student-modal').classList.add('show');
+        }
+        window.saveStudent = async function() {
+            const editId = document.getElementById('edit-student-id').value;
+            const name = document.getElementById('student-name').value.trim(), level = document.getElementById('student-level').value;
+            const parent = document.getElementById('student-parent').value.trim(), phone = document.getElementById('student-phone').value.trim();
+            const startDate = document.getElementById('student-start-date').value, cutoffDate = document.getElementById('student-cutoff-date').value;
+            const amount = parseFloat(document.getElementById('student-amount').value) || 0;
+            if (!name || !parent || !phone || !startDate) { alert('Por favor completa todos los campos obligatorios.'); return; }
+            if (amount <= 0) { alert('Por favor ingresa el monto mensual.'); return; }
+            try {
+                const studentData = { nombre: name, nivel: level, tutor: parent, telefono: phone, fechaInicio: startDate, fechaCorte: cutoffDate, montoMensual: amount, padreId: currentUserId, pagos: editId ? (students.find(s => s.id === editId)?.pagos || []) : [], updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+                if (editId) await db.collection('alumnos').doc(editId).update(studentData);
+                else { studentData.createdAt = firebase.firestore.FieldValue.serverTimestamp(); await db.collection('alumnos').add(studentData); }
+                window.closeStudentModal(); alert('✅ Deportista registrado correctamente.');
+            } catch (error) { alert('Error al guardar: ' + error.message); }
+        }
+        window.deleteStudent = async function(id) { if (confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) { await db.collection('alumnos').doc(id).delete(); } }
+
+        window.openReceiptModalByStudent = function(studentId) {
+            const student = students.find(s => s.id === studentId);
+            if (!student) return;
+            const validatedPayments = (student.pagos || []).filter(p => p.estado === 'validado');
+            if (validatedPayments.length === 0) return;
+            
+            const latestValidated = validatedPayments[validatedPayments.length - 1];
+            currentReceiptPayment = latestValidated;
+            
+            const fechaEmision = latestValidated.fechaEmision ? (latestValidated.fechaEmision.toDate ? latestValidated.fechaEmision.toDate() : new Date(latestValidated.fechaEmision)) : new Date();
+            
+            document.getElementById('receipt-school-name').textContent = schoolConfig.schoolName || 'Roller Vibes MX';
+            document.getElementById('receipt-school-slogan').textContent = schoolConfig.slogan || 'Escuela de Patinaje';
+            document.getElementById('receipt-school-address').textContent = '📍 ' + (schoolConfig.address || 'Dirección no configurada');
+            document.getElementById('receipt-school-phone').textContent = '📞 ' + (schoolConfig.phone || 'Teléfono no configurado');
+            
+            document.getElementById('receipt-folio').textContent = `Folio: ${latestValidated.folio || 'N/A'}`;
+            document.getElementById('receipt-date').textContent = fechaEmision.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('receipt-student').textContent = student.nombre || 'N/A';
+            document.getElementById('receipt-level').textContent = student.nivel || 'N/A';
+            document.getElementById('receipt-parent').textContent = student.tutor || 'N/A';
+            document.getElementById('receipt-method').textContent = latestValidated.metodo || 'N/A';
+            document.getElementById('receipt-amount').textContent = `$${(latestValidated.monto || 0).toFixed(2)} MXN`;
+            
+            document.getElementById('receipt-modal').classList.add('show');
+        }
+        
+        window.closeReceiptModal = function() {
+            document.getElementById('receipt-modal').classList.remove('show');
+            currentReceiptPayment = null;
+        }
+
+        window.downloadReceipt = function() {
+            const element = document.getElementById('receipt-content');
+            html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Recibo_${currentReceiptPayment?.folio || 'Pago'}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        window.shareReceiptWhatsApp = function() {
+            if (!currentReceiptPayment) return;
+            const student = students.find(s => s.pagos?.some(p => p.folio === currentReceiptPayment.folio));
+            const fecha = currentReceiptPayment.fechaEmision ? (currentReceiptPayment.fechaEmision.toDate ? currentReceiptPayment.fechaEmision.toDate() : new Date(currentReceiptPayment.fechaEmision)).toLocaleDateString('es-MX') : 'N/A';
+            
+            const text = `🛼 *ROLLER VIBES MX LA PAZ*\nRecibo de Pago\n\n📋 Folio: ${currentReceiptPayment.folio || 'N/A'}\n📅 Fecha: ${fecha}\n\n👤 Deportista: ${student?.nombre || 'N/A'}\n🎯 Nivel: ${student?.nivel || 'N/A'}\n👨‍👩‍👧 Tutor: ${student?.tutor || 'N/A'}\n\n💰 Concepto: Mensualidad de patinaje\n💳 Método: ${currentReceiptPayment.metodo || 'N/A'}\n✅ Monto pagado: $${(currentReceiptPayment.monto || 0).toFixed(2)} MXN\n\n¡Gracias por tu pago! 🛼`;
+            
+            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        document.getElementById('student-modal').addEventListener('click', function(e) { if (e.target === this) window.closeStudentModal(); });
+        document.getElementById('payment-modal').addEventListener('click', function(e) { if (e.target === this) window.closePaymentModal(); });
+        document.getElementById('receipt-modal').addEventListener('click', function(e) { if (e.target === this) window.closeReceiptModal(); });
+    </script>
+</body>
+</html>

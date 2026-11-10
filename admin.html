@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roller Vibes MX - Panel Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <!-- ✅ NUEVO: Librería para generar imagen del recibo -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Poppins', sans-serif; background: #F8F9FA; padding: 1rem; padding-bottom: 80px; }
+        
+        :root {
+            --primary-color: #00B4D8;
+            --secondary-color: #03045E;
+            --accent-color: #FF006E;
+            --warning-color: #FFBE0B;
+            --success-color: #06D6A0;
+            --danger-color: #EF476F;
+        }
+        
+        .header { background: linear-gradient(135deg, var(--primary-color), var(--secondary-color)); color: white; padding: 1.5rem; border-radius: 10px; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+        .header-info h1 { font-size: 1.3rem; margin-bottom: 0.3rem; }
+        .header-info p { font-size: 0.8rem; opacity: 0.8; }
+        .btn-logout { background: var(--danger-color); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.85rem; }
+        .btn-logout:hover { background: #D63A5E; }
+        
+        .tabs { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+        .tab-btn { flex: 1; min-width: 100px; padding: 0.8rem; border: none; background: white; color: var(--secondary-color); border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; }
+        .tab-btn.active { background: var(--accent-color); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 0.3rem; font-size: 0.9rem; color: var(--secondary-color); }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.8rem; border: 1px solid #ddd; border-radius: 8px; font-family: 'Poppins', sans-serif; font-size: 0.9rem; }
+        .form-group input:focus, .form-group select:focus { outline: none; border-color: var(--primary-color); }
+        .btn-save { background: var(--success-color); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; font-size: 1rem; }
+        .btn-save:hover { background: #05B88A; }
+        .btn-secondary { background: var(--primary-color); color: white; border: none; padding: 0.8rem 1.5rem; border-radius: 8px; font-weight: 700; cursor: pointer; width: 100%; font-size: 1rem; margin-top: 0.5rem; }
+        
+        .student-card { background: white; padding: 1rem; border-radius: 10px; display: flex; align-items: center; gap: 1rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 0.8rem; flex-wrap: wrap; }
+        .student-photo { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; background: #eee; }
+        .student-info { flex: 1; min-width: 200px; }
+        .student-name { font-weight: 700; color: var(--secondary-color); font-size: 0.95rem; }
+        .student-parent { font-size: 0.8rem; color: var(--primary-color); margin-top: 0.3rem; }
+        .payment-status { padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
+        .status-paid { background: var(--success-color); color: white; }
+        .status-pending { background: var(--warning-color); color: var(--text-color); }
+        .status-overdue { background: var(--danger-color); color: white; }
+        .status-pendiente { background: #FFA500; color: white; }
+        
+        .btn-delete { background: var(--danger-color); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; margin-left: 0.5rem; }
+        .btn-edit { background: var(--primary-color); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+        .btn-validate { background: var(--success-color); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; }
+        .btn-receipt { background: var(--secondary-color); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; cursor: pointer; font-size: 0.8rem; margin-left: 0.5rem; }
+        
+        .login-screen { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--secondary-color); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 1rem; }
+        .login-box { background: white; padding: 2rem; border-radius: 15px; text-align: center; width: 100%; max-width: 380px; }
+        .login-box h2 { margin-bottom: 1.5rem; color: var(--secondary-color); }
+        .login-box input { padding: 0.8rem; border: 2px solid #ddd; border-radius: 8px; width: 100%; margin-bottom: 1rem; font-size: 1rem; font-family: 'Poppins', sans-serif; }
+        .login-box input:focus { outline: none; border-color: var(--primary-color); }
+        .hidden { display: none !important; }
+        .loading { text-align: center; padding: 2rem; color: #666; }
+        .auth-toggle { margin-top: 1rem; font-size: 0.9rem; color: #666; }
+        .auth-toggle span { color: var(--accent-color); cursor: pointer; font-weight: 600; text-decoration: underline; }
+        
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+        .stat-card { background: white; padding: 1.2rem; border-radius: 10px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .stat-value { font-size: 2rem; font-weight: 700; margin-bottom: 0.3rem; }
+        .stat-label { color: #666; font-size: 0.85rem; }
+        
+        .modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 1rem; }
+        .modal.show { display: flex; }
+        .modal-content { background: white; border-radius: 15px; max-width: 500px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem; position: relative; }
+        .modal-close { position: absolute; top: 15px; right: 15px; background: var(--danger-color); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; font-size: 1.2rem; cursor: pointer; }
+        .modal-content h2 { color: var(--secondary-color); margin-bottom: 1rem; }
+        
+        .user-badge { background: var(--primary-color); color: white; padding: 0.2rem 0.6rem; border-radius: 15px; font-size: 0.75rem; font-weight: 600; }
+        .pending-payment-card { background: #FFF3CD; border-left: 4px solid #FFA500; }
+        .validated-payment-card { background: #D4EDDA; border-left: 4px solid var(--success-color); }
+        
+        /* ✅ NUEVO: Estilos del Recibo Digital */
+        #receipt-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            border: 2px dashed var(--primary-color);
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+        .receipt-header { border-bottom: 2px solid var(--secondary-color); padding-bottom: 1rem; margin-bottom: 1rem; }
+        .receipt-header h3 { color: var(--secondary-color); font-size: 1.2rem; margin-bottom: 0.3rem; }
+        .receipt-header p { font-size: 0.85rem; color: var(--text-light); margin: 0.2rem 0; }
+        .receipt-folio { font-size: 1.1rem; font-weight: 700; color: var(--accent-color); margin: 1rem 0; }
+        .receipt-details { text-align: left; margin: 1.5rem 0; font-size: 0.9rem; }
+        .receipt-details div { margin-bottom: 0.5rem; display: flex; justify-content: space-between; }
+        .receipt-details .label { color: var(--text-light); }
+        .receipt-details .value { font-weight: 600; color: var(--secondary-color); }
+        .receipt-total { font-size: 1.3rem; font-weight: 700; color: var(--success-color); margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--secondary-color); }
+        .receipt-footer { margin-top: 1.5rem; font-size: 0.8rem; color: var(--text-light); }
+        
+        .receipt-actions { display: flex; gap: 1rem; margin-top: 1rem; }
+        .btn-download { flex: 1; background: var(--primary-color); color: white; border: none; padding: 0.8rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; }
+        .btn-whatsapp { flex: 1; background: #25d366; color: white; border: none; padding: 0.8rem; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: 'Poppins', sans-serif; }
+        
+        @keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    </style>
+    <link rel="manifest" href="manifest-admin.json">
+    <meta name="theme-color" content="#03045E">
+    <script>
+        if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js'); }); }
+    </script>
+</head>
+<body>
+    <div class="login-screen" id="login-screen">
+        <div class="login-box">
+            <h2>🛼 Roller Vibes MX</h2>
+            <p style="margin-bottom: 1.5rem; color: #666;">Panel de Administración</p>
+            <input type="email" id="auth-email" placeholder="Correo electrónico">
+            <div style="position: relative; width: 100%; margin-bottom: 1rem;">
+                <input type="password" id="auth-password" placeholder="Contraseña" style="width: 100%; padding-right: 45px; box-sizing: border-box;">
+                <button type="button" onclick="window.togglePasswordVisibility()" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; font-size: 1.3rem; color: #666;">👁️</button>
+            </div>
+            <button class="btn-save" id="auth-btn" onclick="window.handleAuth()">Entrar</button>
+            <p id="auth-error" style="color: var(--danger-color); margin-top: 1rem; display: none; font-size: 0.9rem;"></p>
+            <p class="auth-toggle"><span id="auth-toggle-text" onclick="window.toggleAuthMode()">¿No tienes cuenta? Regístrate como Admin</span></p>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="hidden">
+        <div class="header">
+            <div class="header-info">
+                <h1>⚙️ Panel de Control</h1>
+                <p id="user-email-display">Cargando...</p>
+            </div>
+            <button class="btn-logout" onclick="window.logout()">Cerrar Sesión</button>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="window.switchTab('dashboard')">📊 Dashboard</button>
+            <button class="tab-btn" onclick="window.switchTab('alumnos')">🛼 Todos los Alumnos</button>
+            <button class="tab-btn" onclick="window.switchTab('padres')">👨‍👩‍ Padres</button>
+            <button class="tab-btn" onclick="window.switchTab('pagos')">💰 Pagos</button>
+            <button class="tab-btn" onclick="window.switchTab('pendientes')">⏳ Pagos Pendientes</button>
+            <button class="tab-btn" onclick="window.switchTab('config')">⚙️ Configuración</button>
+        </div>
+
+        <div id="tab-dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card"><div class="stat-value" style="color: var(--primary-color);" id="stat-total-students">0</div><div class="stat-label">Total Alumnos</div></div>
+                <div class="stat-card"><div class="stat-value" style="color: var(--success-color);" id="stat-paid">0</div><div class="stat-label">Al día</div></div>
+                <div class="stat-card"><div class="stat-value" style="color: var(--warning-color);" id="stat-pending">0</div><div class="stat-label">Por vencer</div></div>
+                <div class="stat-card"><div class="stat-value" style="color: var(--danger-color);" id="stat-overdue">0</div><div class="stat-label">Vencidos</div></div>
+                <div class="stat-card"><div class="stat-value" style="color: var(--accent-color);" id="stat-income">$0</div><div class="stat-label">Ingresos del mes</div></div>
+                <div class="stat-card"><div class="stat-value" style="color: #FFA500;" id="stat-pending-payments">0</div><div class="stat-label">Pagos Pendientes</div></div>
+                <div class="stat-card"><div class="stat-value" style="color: var(--secondary-color);" id="stat-parents">0</div><div class="stat-label">Padres Registrados</div></div>
+            </div>
+            <h3 style="margin-bottom: 1rem; color: var(--secondary-color);">Alumnos Recientes</h3>
+            <div id="recent-students"></div>
+        </div>
+
+        <div id="tab-alumnos" class="tab-content">
+            <button class="btn-save" onclick="window.openStudentModal()" style="margin-bottom: 1rem;">+ Agregar Alumno Manualmente</button>
+            <div id="students-container"></div>
+        </div>
+
+        <div id="tab-padres" class="tab-content"><div id="parents-container"></div></div>
+
+        <div id="tab-pagos" class="tab-content">
+            <button class="btn-save" onclick="window.openPaymentModal()" style="margin-bottom: 1rem;">+ Registrar Pago</button>
+            <div id="payments-container"></div>
+        </div>
+
+        <div id="tab-pendientes" class="tab-content">
+            <h3 style="margin-bottom: 1rem; color: var(--secondary-color);">Pagos Pendientes de Validación</h3>
+            <div id="pending-payments-container"></div>
+        </div>
+
+        <div id="tab-config" class="tab-content">
+            <div style="background: white; padding: 1.5rem; border-radius: 10px; max-width: 800px; margin: 0 auto;">
+                <h3 style="margin-bottom: 1rem;">Configuración de la Escuela</h3>
+                <div class="form-group"><label>Nombre de la Escuela</label><input type="text" id="cfg-school-name" placeholder="Roller Vibes MX La Paz"></div>
+                <div class="form-group"><label>Slogan (Subtítulo del Header)</label><input type="text" id="cfg-slogan" placeholder="Escuela de Patinaje"></div>
+                <div class="form-group"><label>Dirección</label><input type="text" id="cfg-address" placeholder="Dirección de la pista"></div>
+                <div class="form-group"><label>Teléfono / WhatsApp</label><input type="text" id="cfg-phone" placeholder="6124433992"></div>
+                <div class="form-group"><label>Link de Pago (Mercado Pago, Stripe, etc.)</label><input type="text" id="cfg-payment-link" placeholder="https://mpago.la/..."></div>
+                <button class="btn-save" onclick="window.saveConfig()">💾 Guardar Configuración</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Agregar/Editar Alumno -->
+    <div id="student-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="window.closeStudentModal()">✕</button>
+            <h2 style="margin-bottom: 1rem; color: var(--secondary-color);" id="student-modal-title">Agregar Alumno</h2>
+            <input type="hidden" id="edit-student-id">
+            <div class="form-group"><label>Nombre Completo</label><input type="text" id="student-name" placeholder="Ej: Juan Pérez"></div>
+            <div class="form-group"><label>Nivel de Patinaje</label>
+                <select id="student-level"><option value="Principiante">Principiante</option><option value="Intermedio">Intermedio</option><option value="Avanzado">Avanzado</option><option value="Freestyle">Freestyle</option></select>
+            </div>
+            <div class="form-group"><label>Padre/Tutor Responsable</label><select id="student-parent-select"></select></div>
+            <div class="form-group"><label>Fecha de Inicio</label><input type="date" id="student-start-date"></div>
+            <div class="form-group"><label>Fecha de Corte Mensual</label>
+                <select id="student-cutoff-date"><option value="5">Día 5 de cada mes</option><option value="20">Día 20 de cada mes</option></select>
+            </div>
+            <button class="btn-save" onclick="window.saveStudent()">Guardar Alumno</button>
+        </div>
+    </div>
+
+    <!-- Modal para Registrar Pago -->
+    <div id="payment-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="window.closePaymentModal()">✕</button>
+            <h2 style="margin-bottom: 1rem; color: var(--secondary-color);">Registrar Pago</h2>
+            <div class="form-group"><label>Alumno</label><select id="payment-student"></select></div>
+            <div class="form-group"><label>Monto ($)</label><input type="number" id="payment-amount" placeholder="500"></div>
+            <div class="form-group"><label>Fecha de Pago</label><input type="date" id="payment-date"></div>
+            <div class="form-group"><label>Método de Pago</label>
+                <select id="payment-method"><option value="Efectivo">Efectivo</option><option value="Transferencia">Transferencia</option><option value="Tarjeta">Tarjeta</option><option value="Link de Pago">Link de Pago</option></select>
+            </div>
+            <button class="btn-save" onclick="window.savePayment()">Guardar Pago</button>
+        </div>
+    </div>
+
+    <!-- Modal para validar pago pendiente -->
+    <div id="validate-payment-modal" class="modal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="window.closeValidatePaymentModal()">✕</button>
+            <h2 style="margin-bottom: 1rem; color: var(--secondary-color);">Validar Pago Pendiente</h2>
+            <div id="validate-payment-info" style="background: #FFF3CD; padding: 1rem; border-radius: 10px; margin-bottom: 1rem;"></div>
+            <div class="form-group"><label>Monto a Validar ($)</label><input type="number" id="validate-amount" placeholder="500"></div>
+            <div class="form-group"><label>Fecha de Pago</label><input type="date" id="validate-date"></div>
+            <button class="btn-save" onclick="window.validatePayment()">✅ Validar Pago</button>
+        </div>
+    </div>
+
+    <!-- ✅ NUEVO: Modal de Recibo Digital -->
+    <div id="receipt-modal" class="modal">
+        <div class="modal-content" style="max-width: 400px;">
+            <button class="modal-close" onclick="window.closeReceiptModal()">✕</button>
+            <h2 style="margin-bottom: 1rem; color: var(--secondary-color); text-align: center;">📄 Recibo de Pago</h2>
+            
+            <div id="receipt-content">
+                <div class="receipt-header">
+                    <h3 id="receipt-school-name">Roller Vibes MX</h3>
+                    <p id="receipt-school-slogan">Escuela de Patinaje</p>
+                    <p id="receipt-school-address">📍 Dirección</p>
+                    <p id="receipt-school-phone">📞 Teléfono</p>
+                </div>
+                <div class="receipt-folio" id="receipt-folio">Folio: RV-NOV26-1001</div>
+                <div class="receipt-details">
+                    <div><span class="label">Fecha de emisión:</span><span class="value" id="receipt-date">--</span></div>
+                    <div><span class="label">Deportista:</span><span class="value" id="receipt-student">--</span></div>
+                    <div><span class="label">Nivel:</span><span class="value" id="receipt-level">--</span></div>
+                    <div><span class="label">Tutor:</span><span class="value" id="receipt-parent">--</span></div>
+                    <div><span class="label">Concepto:</span><span class="value">Mensualidad de patinaje</span></div>
+                    <div><span class="label">Método de pago:</span><span class="value" id="receipt-method">--</span></div>
+                </div>
+                <div class="receipt-total" id="receipt-amount">$0.00 MXN</div>
+                <div class="receipt-footer">
+                    <p>Validado por: Administración</p>
+                    <p>¡Gracias por tu pago! 🛼</p>
+                </div>
+            </div>
+
+            <div class="receipt-actions">
+                <button class="btn-download" onclick="window.downloadReceipt()">📥 Descargar Imagen</button>
+                <button class="btn-whatsapp" onclick="window.shareReceiptWhatsApp()">💬 Enviar por WhatsApp</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCWYeqLwrl8wcQ9LmFhvVjDCc6phlfxv5g",
+            authDomain: "app-roller-vibes-mx-la-paz.firebaseapp.com",
+            projectId: "app-roller-vibes-mx-la-paz",
+            storageBucket: "app-roller-vibes-mx-la-paz.firebasestorage.app",
+            messagingSenderId: "613299405976",
+            appId: "1:613299405976:web:512f54a94012102f53bced"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+
+        firebase.auth().setPersistence(firebase.auth.Auth.Persistence.SESSION);
+
+        let currentUserId = null;
+        let students = [];
+        let parents = [];
+        let payments = [];
+        let pendingPayments = [];
+        let isLoginMode = true;
+        let currentValidatePaymentId = null;
+        let audioContext = null;
+        let currentReceiptPayment = null; // ✅ NUEVO: Para el recibo
+        let schoolConfig = {}; // ✅ NUEVO: Para datos del recibo
+
+        document.addEventListener('click', () => {
+            if (!audioContext) { audioContext = new (window.AudioContext || window.webkitAudioContext)(); }
+            if (audioContext.state === 'suspended') { audioContext.resume(); }
+        }, { once: true });
+
+        function playNotificationSound() {
+            if (!audioContext) return;
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(660, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(1090, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.3);
+            } catch (e) {
+                console.log('Error al reproducir sonido:', e);
+            }
+        }
+        auth.onAuthStateChanged(async (user) => {
+            if (user) {
+                currentUserId = user.uid;
+                const userDoc = await db.collection('usuarios').doc(user.uid).get();
+                if (!userDoc.exists || userDoc.data().role !== 'admin') {
+                    alert('⚠️ Acceso denegado. Solo administradores.');
+                    auth.signOut(); return;
+                }
+                document.getElementById('user-email-display').textContent = user.email + ' (Administrador)';
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('admin-panel').classList.remove('hidden');
+                
+                // ✅ NUEVO: Cargar config para el recibo
+                const configDoc = await db.collection('configuracion').doc('escuela').get();
+                if (configDoc.exists) schoolConfig = configDoc.data();
+                
+                setupRealTimeListeners();
+            } else {
+                currentUserId = null;
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('admin-panel').classList.add('hidden');
+                students = []; parents = []; payments = []; pendingPayments = [];
+            }
+        });
+
+        window.toggleAuthMode = function() {
+            isLoginMode = !isLoginMode;
+            document.getElementById('auth-btn').textContent = isLoginMode ? 'Entrar' : 'Registrarme como Admin';
+            document.getElementById('auth-toggle-text').textContent = isLoginMode ? '¿No tienes cuenta? Regístrate como Admin' : '¿Ya tienes cuenta? Inicia sesión';
+            document.getElementById('auth-error').style.display = 'none';
+        }
+        window.togglePasswordVisibility = function() {
+            const p = document.getElementById('auth-password');
+            p.type = p.type === 'password' ? 'text' : 'password';
+        }
+        window.handleAuth = async function() {
+            const email = document.getElementById('auth-email').value.trim();
+            const password = document.getElementById('auth-password').value;
+            const errorEl = document.getElementById('auth-error');
+            const btn = document.getElementById('auth-btn');
+            if (!email || !password) { errorEl.textContent = 'Ingresa correo y contraseña.'; errorEl.style.display = 'block'; return; }
+            btn.textContent = 'Procesando...'; btn.disabled = true; errorEl.style.display = 'none';
+            try {
+                if (isLoginMode) { await auth.signInWithEmailAndPassword(email, password); } 
+                else {
+                    const uc = await auth.createUserWithEmailAndPassword(email, password);
+                    await db.collection('usuarios').doc(uc.user.uid).set({ email, role: 'admin', createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                }
+            } catch (error) {
+                let msg = 'Error de autenticación.';
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') msg = 'Correo o contraseña incorrectos.';
+                if (error.code === 'auth/email-already-in-use') msg = 'Este correo ya está registrado.';
+                if (error.code === 'auth/weak-password') msg = 'La contraseña debe tener al menos 6 caracteres.';
+                errorEl.textContent = msg; errorEl.style.display = 'block';
+            } finally { btn.textContent = isLoginMode ? 'Entrar' : 'Registrarme como Admin'; btn.disabled = false; }
+        }
+        window.logout = function() { if(confirm('¿Cerrar sesión?')) auth.signOut(); }
+        window.switchTab = function(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            event.target.classList.add('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+        }
+
+        function setupRealTimeListeners() {
+            db.collection('alumnos').orderBy('nombre').onSnapshot(snapshot => {
+                students = []; snapshot.forEach(doc => students.push({ id: doc.id, ...doc.data() }));
+                renderStudents(); renderRecentStudents(); renderDashboard();
+            });
+            db.collection('usuarios').where('role', '==', 'padre').onSnapshot(snapshot => {
+                parents = []; snapshot.forEach(doc => parents.push({ id: doc.id, ...doc.data() }));
+                renderParents(); renderRecentStudents();
+            });
+            db.collection('pagos').orderBy('fecha', 'desc').onSnapshot(snapshot => {
+                payments = []; snapshot.forEach(doc => payments.push({ id: doc.id, ...doc.data() }));
+                renderPayments();
+            });
+            db.collection('pagos').where('estado', '==', 'pendiente').orderBy('createdAt', 'desc').onSnapshot(snapshot => {
+                const oldLength = pendingPayments.length;
+                pendingPayments = []; snapshot.forEach(doc => pendingPayments.push({ id: doc.id, ...doc.data() }));
+                renderPendingPayments(); renderDashboard();
+                if (pendingPayments.length > oldLength && oldLength >= 0) playNotificationSound();
+            });
+            
+            // ✅ NUEVO: Escuchar cambios en config para actualizar el recibo en tiempo real
+            db.collection('configuracion').doc('escuela').onSnapshot(doc => {
+                if (doc.exists) schoolConfig = doc.data();
+            });
+        }
+
+        function getPaymentStatus(student) {
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const cutoffDay = parseInt(student.fechaCorte) || 5;
+            const nextDueDate = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (today > nextDueDate) nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+            if (!student.pagos || student.pagos.length === 0) return { status: 'overdue', text: 'Sin pagos' };
+            const lastPayment = student.pagos[student.pagos.length - 1];
+            const lastPaymentDate = lastPayment.fecha.toDate ? lastPayment.fecha.toDate() : new Date(lastPayment.fecha);
+            if (lastPaymentDate >= nextDueDate) return { status: 'paid', text: 'Al día' };
+            const currentMonthCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (lastPaymentDate < currentMonthCutoff) return { status: 'overdue', text: 'Vencido' };
+            const daysUntilDue = Math.ceil((nextDueDate - today) / (1000 * 60 * 60 * 24));
+            if (daysUntilDue <= 7) return { status: 'pending', text: 'Por vencer' };
+            return { status: 'paid', text: 'Al día' };
+        }
+
+        function renderDashboard() {
+            const today = new Date();
+            let paid = 0, pending = 0, overdue = 0, income = 0;
+            students.forEach(student => {
+                const ps = getPaymentStatus(student);
+                if (ps.status === 'paid') paid++; else if (ps.status === 'pending') pending++; else overdue++;
+                if (student.pagos) {
+                    student.pagos.forEach(pago => {
+                        const pd = pago.fecha.toDate ? pago.fecha.toDate() : new Date(pago.fecha);
+                        if (pd.getMonth() === today.getMonth() && pd.getFullYear() === today.getFullYear()) income += pago.monto || 0;
+                    });
+                }
+            });
+            document.getElementById('stat-total-students').textContent = students.length;
+            document.getElementById('stat-paid').textContent = paid;
+            document.getElementById('stat-pending').textContent = pending;
+            document.getElementById('stat-overdue').textContent = overdue;
+            document.getElementById('stat-income').textContent = '$' + income.toLocaleString('es-MX');
+            document.getElementById('stat-pending-payments').textContent = pendingPayments.length;
+            document.getElementById('stat-parents').textContent = parents.length;
+        }
+
+        function renderStudents() {
+            const container = document.getElementById('students-container');
+            container.innerHTML = students.length === 0 ? '<p class="loading">No hay alumnos registrados.</p>' : '';
+            students.forEach(student => {
+                const ps = getPaymentStatus(student);
+                const parent = parents.find(p => p.id === student.padreId);
+                const card = document.createElement('div'); card.className = 'student-card';
+                card.innerHTML = `
+                    <img src="${student.foto || './logo-192.png'}" alt="${student.nombre}" class="student-photo" onerror="this.src='./logo-192.png'">
+                    <div class="student-info">
+                        <div class="student-name">${student.nombre}</div>
+                        <div class="student-parent">👤 ${parent?.nombre || parent?.email || 'Sin padre asignado'}</div>
+                        <div class="student-parent">📅 Corte: día ${student.fechaCorte || 5} • ${student.nivel || 'Sin nivel'}</div>
+                    </div>
+                    <span class="payment-status status-${ps.status}">${ps.text}</span>
+                    <button class="btn-edit" onclick="window.editStudent('${student.id}')">✏️</button>
+                    <button class="btn-delete" onclick="window.deleteStudent('${student.id}')">🗑️</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderParents() {
+            const container = document.getElementById('parents-container');
+            container.innerHTML = parents.length === 0 ? '<p class="loading">No hay padres registrados.</p>' : '';
+            const studentsByParent = {};
+            students.forEach(s => { if (s.padreId) studentsByParent[s.padreId] = (studentsByParent[s.padreId] || 0) + 1; });
+            parents.forEach(parent => {
+                const card = document.createElement('div'); card.className = 'student-card';
+                card.innerHTML = `
+                    <div class="student-info" style="flex: 1;">
+                        <div class="student-name">${parent.nombre || parent.email}</div>
+                        <div class="student-parent">${parent.email}</div>
+                        <div class="student-parent">${studentsByParent[parent.id] || 0} hijo(s) registrado(s)</div>
+                    </div>
+                    <span class="user-badge">Padre/Madre</span>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderPayments() {
+            const container = document.getElementById('payments-container');
+            container.innerHTML = payments.length === 0 ? '<p class="loading">No hay pagos registrados.</p>' : '';
+            payments.forEach(payment => {
+                const date = payment.fecha ? (payment.fecha.toDate ? payment.fecha.toDate() : new Date(payment.fecha)).toLocaleDateString('es-MX') : 'Recién';
+                const student = students.find(s => s.id === payment.alumnoId);
+                const isPending = payment.estado === 'pendiente';
+                const card = document.createElement('div');
+                card.className = `student-card ${isPending ? 'pending-payment-card' : 'validated-payment-card'}`;
+                
+                // ✅ NUEVO: Botón de recibo solo si está validado
+                const receiptBtn = !isPending ? `<button class="btn-receipt" onclick="window.openReceiptModalById('${payment.id}')">📄 Recibo</button>` : '';
+                
+                card.innerHTML = `
+                    <div class="student-info">
+                        <div class="student-name">${student?.nombre || payment.alumnoNombre || 'Alumno eliminado'}</div>
+                        <div class="student-parent">${date} • ${payment.metodo}</div>
+                        ${isPending ? '<div style="color: #FFA500; font-weight: 600; font-size: 0.8rem;">⏳ Pendiente de validación</div>' : ''}
+                    </div>
+                    <div style="font-weight: 700; color: ${isPending ? '#FFA500' : 'var(--success-color)'}; font-size: 1.2rem;">
+                        ${isPending ? 'Pendiente' : '$' + payment.monto}
+                    </div>
+                    ${isPending ? `<button class="btn-validate" onclick="window.openValidatePaymentModal('${payment.id}')">✅ Validar</button>` : ''}
+                    ${receiptBtn}
+                    <button class="btn-delete" onclick="window.deletePayment('${payment.id}')">🗑️</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderPendingPayments() {
+            const container = document.getElementById('pending-payments-container');
+            if (pendingPayments.length === 0) { container.innerHTML = '<p class="loading">No hay pagos pendientes de validación. 🎉</p>'; return; }
+            container.innerHTML = '';
+            pendingPayments.forEach(payment => {
+                const student = students.find(s => s.id === payment.alumnoId);
+                const parent = parents.find(p => p.id === payment.padreId);
+                const date = payment.createdAt ? (payment.createdAt.toDate ? payment.createdAt.toDate() : new Date(payment.createdAt)).toLocaleDateString('es-MX') : 'Recién';
+                const card = document.createElement('div'); card.className = 'student-card pending-payment-card';
+                card.innerHTML = `
+                    <div class="student-info">
+                        <div class="student-name">${student?.nombre || payment.alumnoNombre || 'Alumno eliminado'}</div>
+                        <div class="student-parent">👤 Padre: ${parent?.nombre || parent?.email || 'Desconocido'}</div>
+                        <div class="student-parent">📅 Registrado: ${date}</div>
+                        <div class="student-parent">📞 Teléfono: ${student?.telefono || 'No disponible'}</div>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="color: #FFA500; font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem;">⏳ Pendiente</div>
+                        <button class="btn-validate" onclick="window.openValidatePaymentModal('${payment.id}')">✅ Validar Pago</button>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderRecentStudents() {
+            const container = document.getElementById('recent-students');
+            const recent = students.slice(0, 5);
+            container.innerHTML = recent.length === 0 ? '<p class="loading">No hay alumnos registrados.</p>' : '';
+            recent.forEach(student => {
+                const parent = parents.find(p => p.id === student.padreId);
+                const card = document.createElement('div'); card.className = 'student-card';
+                card.innerHTML = `
+                    <img src="${student.foto || './logo-192.png'}" alt="${student.nombre}" class="student-photo" onerror="this.src='./logo-192.png'">
+                    <div class="student-info">
+                        <div class="student-name">${student.nombre}</div>
+                        <div class="student-parent">${student.nivel || 'Sin nivel'} • ${parent?.nombre || parent?.email || 'Sin padre'}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        window.openStudentModal = function() {
+            const select = document.getElementById('student-parent-select');
+            select.innerHTML = parents.map(p => `<option value="${p.id}">${p.nombre || p.email}</option>`).join('');
+            document.getElementById('student-modal-title').textContent = 'Agregar Alumno';
+            document.getElementById('edit-student-id').value = '';
+            document.getElementById('student-name').value = '';
+            document.getElementById('student-level').value = 'Principiante';
+            document.getElementById('student-start-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('student-cutoff-date').value = '5';
+            document.getElementById('student-modal').classList.add('show');
+        }
+        window.closeStudentModal = function() { document.getElementById('student-modal').classList.remove('show'); }
+        window.editStudent = function(id) {
+            const student = students.find(s => s.id === id); if (!student) return;
+            const select = document.getElementById('student-parent-select');
+            select.innerHTML = parents.map(p => `<option value="${p.id}" ${p.id === student.padreId ? 'selected' : ''}>${p.nombre || p.email}</option>`).join('');
+            document.getElementById('student-modal-title').textContent = 'Editar Alumno';
+            document.getElementById('edit-student-id').value = student.id;
+            document.getElementById('student-name').value = student.nombre || '';
+            document.getElementById('student-level').value = student.nivel || 'Principiante';
+            document.getElementById('student-start-date').value = student.fechaInicio || '';
+            document.getElementById('student-cutoff-date').value = student.fechaCorte || '5';
+            document.getElementById('student-modal').classList.add('show');
+        }
+        window.saveStudent = async function() {
+            const editId = document.getElementById('edit-student-id').value;
+            const name = document.getElementById('student-name').value;
+            const level = document.getElementById('student-level').value;
+            const padreId = document.getElementById('student-parent-select').value;
+            const startDate = document.getElementById('student-start-date').value;
+            const cutoffDate = document.getElementById('student-cutoff-date').value;
+            if (!name || !padreId || !startDate) { alert('Completa todos los campos.'); return; }
+            try {
+                const studentData = { nombre: name, nivel: level, padreId: padreId, fechaInicio: startDate, fechaCorte: cutoffDate, pagos: editId ? (students.find(s => s.id === editId)?.pagos || []) : [], updatedAt: firebase.firestore.FieldValue.serverTimestamp() };
+                if (editId) await db.collection('alumnos').doc(editId).update(studentData);
+                else { studentData.createdAt = firebase.firestore.FieldValue.serverTimestamp(); await db.collection('alumnos').add(studentData); }
+                window.closeStudentModal(); alert('✅ Alumno guardado correctamente.');
+            } catch (error) { alert('Error: ' + error.message); }
+        }
+        window.deleteStudent = async function(id) { if (confirm('¿Eliminar este alumno?')) { await db.collection('alumnos').doc(id).delete(); } }
+        window.openPaymentModal = function() {
+            const select = document.getElementById('payment-student');
+            select.innerHTML = students.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+            document.getElementById('payment-amount').value = '';
+            document.getElementById('payment-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('payment-method').value = 'Efectivo';
+            document.getElementById('payment-modal').classList.add('show');
+        }
+        window.closePaymentModal = function() { document.getElementById('payment-modal').classList.remove('show'); }
+        window.savePayment = async function() {
+            const studentId = document.getElementById('payment-student').value;
+            const amount = parseFloat(document.getElementById('payment-amount').value);
+            const date = document.getElementById('payment-date').value;
+            const method = document.getElementById('payment-method').value;
+            if (!studentId || !amount || !date) { alert('Completa todos los campos.'); return; }
+            const student = students.find(s => s.id === studentId); if (!student) return;
+            try {
+                const paymentData = { alumnoId: studentId, alumnoNombre: student.nombre, monto: amount, fecha: new Date(date), metodo: method, registradoPor: currentUserId, estado: 'validado', createdAt: firebase.firestore.FieldValue.serverTimestamp() };
+                await db.collection('pagos').add(paymentData);
+                const updatedPagos = student.pagos || [];
+                updatedPagos.push({ monto: amount, fecha: new Date(date), metodo: method });
+                await db.collection('alumnos').doc(studentId).update({ pagos: updatedPagos });
+                window.closePaymentModal(); alert('✅ Pago registrado correctamente.');
+            } catch (error) { alert('Error: ' + error.message); }
+        }
+
+        window.deletePayment = async function(id) {
+            if (confirm('¿Eliminar este pago? Esto recalculará automáticamente los ingresos del mes.')) {
+                try {
+                    const paymentToDelete = payments.find(p => p.id === id);
+                    await db.collection('pagos').doc(id).delete();
+                    if (paymentToDelete && paymentToDelete.alumnoId) {
+                        const allPaymentsSnapshot = await db.collection('pagos').where('alumnoId', '==', paymentToDelete.alumnoId).get();
+                        const updatedPagos = [];
+                        allPaymentsSnapshot.forEach(doc => {
+                            const pData = doc.data();
+                            if (pData.estado === 'validado') updatedPagos.push({ monto: pData.monto, fecha: pData.fecha, metodo: pData.metodo, estado: 'validado' });
+                        });
+                        await db.collection('alumnos').doc(paymentToDelete.alumnoId).update({ pagos: updatedPagos });
+                    }
+                } catch (error) { console.error('Error al eliminar pago:', error); alert('Error: ' + error.message); }
+            }
+        }
+
+        window.openValidatePaymentModal = function(paymentId) {
+            const payment = pendingPayments.find(p => p.id === paymentId); if (!payment) return;
+            currentValidatePaymentId = paymentId;
+            const student = students.find(s => s.id === payment.alumnoId);
+            const parent = parents.find(p => p.id === payment.padreId);
+            const expectedAmount = payment.montoEsperado || payment.monto || (student ? student.montoMensual : 0);
+            document.getElementById('validate-payment-info').innerHTML = `
+                <div style="margin-bottom: 0.5rem;"><strong>Deportista:</strong> ${student?.nombre || payment.alumnoNombre}</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Padre:</strong> ${parent?.nombre || parent?.email}</div>
+                <div style="margin-bottom: 0.5rem;"><strong>Monto Esperado:</strong> $${expectedAmount}</div>
+                <div><strong>Teléfono:</strong> ${student?.telefono || 'No disponible'}</div>
+            `;
+            document.getElementById('validate-amount').value = expectedAmount > 0 ? expectedAmount : '';
+            document.getElementById('validate-date').value = new Date().toISOString().split('T')[0];
+            document.getElementById('validate-payment-modal').classList.add('show');
+        }
+        window.closeValidatePaymentModal = function() { document.getElementById('validate-payment-modal').classList.remove('show'); currentValidatePaymentId = null; }
+
+        // ✅ NUEVO: Lógica de validación con generación de folio
+        window.validatePayment = async function() {
+            const amount = parseFloat(document.getElementById('validate-amount').value);
+            const date = document.getElementById('validate-date').value;
+            if (!amount || !date) { alert('Ingresa el monto y la fecha.'); return; }
+            if (!confirm('¿Confirmar validación de este pago?')) return;
+            
+            try {
+                const payment = pendingPayments.find(p => p.id === currentValidatePaymentId);
+                const originalMethod = payment ? payment.metodo : 'Efectivo';
+                const cleanMethod = originalMethod.replace(' - Pendiente de validación', '').trim();
+                
+                // ✅ Generar Folio
+                const months = ["ENE", "FEB", "MAR", "ABR", "MAY", "JUN", "JUL", "AGO", "SEP", "OCT", "NOV", "DIC"];
+                const now = new Date();
+                const currentPeriod = `${months[now.getMonth()]}${now.getFullYear().toString().slice(-2)}`;
+                
+                const configDoc = await db.collection('configuracion').doc('escuela').get();
+                let configData = configDoc.exists ? configDoc.data() : {};
+                let currentFolio = configData.ultimoFolio || { periodo: currentPeriod, numero: 1000 };
+                
+                let newNumero = 1001;
+                if (currentFolio.periodo === currentPeriod) {
+                    newNumero = currentFolio.numero + 1;
+                }
+                
+                const newFolioStr = `RV-${currentPeriod}-${newNumero}`;
+                const fechaEmision = new Date();
+                
+                // Actualizar config con nuevo folio
+                await db.collection('configuracion').doc('escuela').set({
+                    ...configData,
+                    ultimoFolio: { periodo: currentPeriod, numero: newNumero }
+                }, { merge: true });
+                
+                // Actualizar pago
+                await db.collection('pagos').doc(currentValidatePaymentId).update({
+                    monto: amount,
+                    fecha: new Date(date),
+                    metodo: cleanMethod,
+                    estado: 'validado',
+                    folio: newFolioStr,
+                    fechaEmision: fechaEmision,
+                    validadoPor: currentUserId,
+                    validadoEn: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                if (payment) {
+                    const student = students.find(s => s.id === payment.alumnoId);
+                    if (student) {
+                        const updatedPagos = student.pagos || [];
+                        const pendingIndex = updatedPagos.findIndex(p => p.estado === 'pendiente');
+                        if (pendingIndex !== -1) {
+                            updatedPagos[pendingIndex] = { monto: amount, fecha: new Date(date), metodo: cleanMethod, estado: 'validado', folio: newFolioStr, fechaEmision: fechaEmision };
+                        } else {
+                            updatedPagos.push({ monto: amount, fecha: new Date(date), metodo: cleanMethod, estado: 'validado', folio: newFolioStr, fechaEmision: fechaEmision });
+                        }
+                        await db.collection('alumnos').doc(payment.alumnoId).update({ pagos: updatedPagos });
+                    }
+                }
+                
+                window.closeValidatePaymentModal();
+                alert(`✅ Pago validado correctamente.\nFolio generado: ${newFolioStr}`);
+            } catch (error) { alert('Error al validar: ' + error.message); }
+        }
+
+        // ✅ NUEVO: Funciones del Recibo Digital
+        window.openReceiptModalById = function(paymentId) {
+            const payment = payments.find(p => p.id === paymentId);
+            if (!payment || payment.estado !== 'validado') return;
+            
+            currentReceiptPayment = payment;
+            const student = students.find(s => s.id === payment.alumnoId);
+            const parent = parents.find(p => p.id === payment.padreId);
+            
+            const fechaEmision = payment.fechaEmision ? (payment.fechaEmision.toDate ? payment.fechaEmision.toDate() : new Date(payment.fechaEmision)) : new Date();
+            
+            document.getElementById('receipt-school-name').textContent = schoolConfig.schoolName || 'Roller Vibes MX';
+            document.getElementById('receipt-school-slogan').textContent = schoolConfig.slogan || 'Escuela de Patinaje';
+            document.getElementById('receipt-school-address').textContent = '📍 ' + (schoolConfig.address || 'Dirección no configurada');
+            document.getElementById('receipt-school-phone').textContent = '📞 ' + (schoolConfig.phone || 'Teléfono no configurado');
+            
+            document.getElementById('receipt-folio').textContent = `Folio: ${payment.folio || 'N/A'}`;
+            document.getElementById('receipt-date').textContent = fechaEmision.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('receipt-student').textContent = student?.nombre || payment.alumnoNombre || 'N/A';
+            document.getElementById('receipt-level').textContent = student?.nivel || 'N/A';
+            document.getElementById('receipt-parent').textContent = parent?.nombre || parent?.email || 'N/A';
+            document.getElementById('receipt-method').textContent = payment.metodo || 'N/A';
+            document.getElementById('receipt-amount').textContent = `$${(payment.monto || 0).toFixed(2)} MXN`;
+            
+            document.getElementById('receipt-modal').classList.add('show');
+        }
+        
+        window.closeReceiptModal = function() {
+            document.getElementById('receipt-modal').classList.remove('show');
+            currentReceiptPayment = null;
+        }
+
+        window.downloadReceipt = function() {
+            const element = document.getElementById('receipt-content');
+            html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `Recibo_${currentReceiptPayment?.folio || 'Pago'}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        window.shareReceiptWhatsApp = function() {
+            if (!currentReceiptPayment) return;
+            const student = students.find(s => s.id === currentReceiptPayment.alumnoId);
+            const parent = parents.find(p => p.id === currentReceiptPayment.padreId);
+            const fecha = currentReceiptPayment.fechaEmision ? (currentReceiptPayment.fechaEmision.toDate ? currentReceiptPayment.fechaEmision.toDate() : new Date(currentReceiptPayment.fechaEmision)).toLocaleDateString('es-MX') : 'N/A';
+            
+            const text = `🛼 *ROLLER VIBES MX LA PAZ*\nRecibo de Pago\n\n📋 Folio: ${currentReceiptPayment.folio || 'N/A'}\n📅 Fecha: ${fecha}\n\n👤 Deportista: ${student?.nombre || 'N/A'}\n🎯 Nivel: ${student?.nivel || 'N/A'}\n👨‍👩‍👧 Tutor: ${parent?.nombre || parent?.email || 'N/A'}\n\n💰 Concepto: Mensualidad de patinaje\n💳 Método: ${currentReceiptPayment.metodo || 'N/A'}\n✅ Monto pagado: $${(currentReceiptPayment.monto || 0).toFixed(2)} MXN\n\n¡Gracias por tu pago! 🛼`;
+            
+            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank');
+        }
+
+        window.saveConfig = async function() {
+            const config = {
+                schoolName: document.getElementById('cfg-school-name').value,
+                slogan: document.getElementById('cfg-slogan').value,
+                address: document.getElementById('cfg-address').value,
+                phone: document.getElementById('cfg-phone').value,
+                paymentLink: document.getElementById('cfg-payment-link').value
+            };
+            try {
+                await db.collection('configuracion').doc('escuela').set(config, { merge: true });
+                alert('✅ Configuración guardada.');
+            } catch (error) { alert('Error: ' + error.message); }
+        }
+
+        document.getElementById('student-modal').addEventListener('click', function(e) { if (e.target === this) window.closeStudentModal(); });
+        document.getElementById('payment-modal').addEventListener('click', function(e) { if (e.target === this) window.closePaymentModal(); });
+        document.getElementById('validate-payment-modal').addEventListener('click', function(e) { if (e.target === this) window.closeValidatePaymentModal(); });
+        document.getElementById('receipt-modal').addEventListener('click', function(e) { if (e.target === this) window.closeReceiptModal(); });
+    </script>
+</body>
+</html>

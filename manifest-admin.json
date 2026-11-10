@@ -1,0 +1,25 @@
+{
+  "name": "Roller Vibes MX - Panel Admin",
+  "short_name": "RV Admin",
+  "description": "Panel de administración para Roller Vibes MX La Paz",
+  "start_url": "./admin.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#03045E",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "./logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
