@@ -301,30 +301,13 @@
                 navigator.serviceWorker.register('./sw.js').then(r => console.log('SW registrado:', r)).catch(e => console.log('Error SW:', e));
             });
         }
-
-        // ✅ CORREGIDO: Botón de instalación forzado a ser visible si no está instalada
         const installBtn = document.getElementById('install-btn');
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
-        
-        if (!isStandalone) {
-            installBtn.style.display = 'block'; // Forzar visibilidad inicial
-        }
+        if (!isStandalone) installBtn.style.display = 'block';
 
-        window.addEventListener('beforeinstallprompt', (e) => { 
-            e.preventDefault(); 
-            deferredPrompt = e; 
-            installBtn.style.display = 'block'; 
-        });
-
+        window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; installBtn.style.display = 'block'; });
         installBtn.addEventListener('click', async () => {
-            if (deferredPrompt) { 
-                deferredPrompt.prompt(); 
-                const { outcome } = await deferredPrompt.userChoice; 
-                if (outcome === 'accepted') {
-                    installBtn.style.display = 'none'; 
-                }
-                deferredPrompt = null; 
-            }
+            if (deferredPrompt) { deferredPrompt.prompt(); const { outcome } = await deferredPrompt.userChoice; if (outcome === 'accepted') installBtn.style.display = 'none'; deferredPrompt = null; }
         });
 
         auth.onAuthStateChanged(async (user) => {
@@ -403,54 +386,32 @@
         function checkUpcomingPayments() {
             if (!("Notification" in window) || Notification.permission !== "granted") return;
             if (sessionStorage.getItem('notified_payments_today')) return;
-
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
+            const today = new Date(); today.setHours(0, 0, 0, 0);
             let notificationsToSend = [];
-
             students.forEach(student => {
                 const cutoffDay = parseInt(student.fechaCorte) || 5;
                 const nextDueDate = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
                 if (today > nextDueDate) nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-                
-                let needsPayment = false;
-                let statusText = "";
-                
+                let needsPayment = false, statusText = "";
                 if (!student.pagos || student.pagos.length === 0) {
-                    needsPayment = true;
-                    statusText = "Sin pagos registrados";
+                    needsPayment = true; statusText = "Sin pagos registrados";
                 } else {
                     const lastPayment = student.pagos[student.pagos.length - 1];
                     const lastPaymentDate = lastPayment.fecha.toDate ? lastPayment.fecha.toDate() : new Date(lastPayment.fecha);
-                    
                     if (lastPaymentDate < nextDueDate) {
                         const daysUntilDue = Math.ceil((nextDueDate - today) / (1000 * 60 * 60 * 24));
-                        if (daysUntilDue < 0) {
-                            needsPayment = true;
-                            statusText = `Vencido desde hace ${Math.abs(daysUntilDue)} días`;
-                        } else if (daysUntilDue <= 5) {
-                            needsPayment = true;
-                            statusText = `Vence en ${daysUntilDue} días (${nextDueDate.toLocaleDateString('es-MX')})`;
-                        }
+                        if (daysUntilDue < 0) { needsPayment = true; statusText = `Vencido desde hace ${Math.abs(daysUntilDue)} días`; } 
+                        else if (daysUntilDue <= 5) { needsPayment = true; statusText = `Vence en ${daysUntilDue} días (${nextDueDate.toLocaleDateString('es-MX')})`; }
                     }
                 }
-                
-                if (needsPayment) {
-                    notificationsToSend.push({
-                        name: student.nombre,
-                        status: statusText,
-                        amount: student.montoMensual || 0
-                    });
-                }
+                if (needsPayment) notificationsToSend.push({ name: student.nombre, status: statusText, amount: student.montoMensual || 0 });
             });
-
             if (notificationsToSend.length > 0) {
                 notificationsToSend.forEach((item, index) => {
                     setTimeout(() => {
                         new Notification("🛼 Roller Vibes MX - Recordatorio de Pago", {
                             body: `Deportista: ${item.name}\nEstado: ${item.status}\nMonto: $${item.amount}\n\nToca aquí para gestionar el pago.`,
-                            icon: "./logo-192.png",
-                            badge: "./logo-192.png"
+                            icon: "./logo-192.png", badge: "./logo-192.png"
                         });
                     }, index * 1500);
                 });
@@ -497,12 +458,8 @@
                     document.getElementById('empty-state').style.display = 'none';
                     document.getElementById('dashboard-content').style.display = 'block';
                     renderDashboard(); renderStudents();
-                    
-                    if ("Notification" in window && Notification.permission === "granted") {
-                        checkUpcomingPayments();
-                    } else if ("Notification" in window && Notification.permission === "default") {
-                        document.getElementById('btn-enable-notif').style.display = 'inline-block';
-                    }
+                    if ("Notification" in window && Notification.permission === "granted") checkUpcomingPayments();
+                    else if ("Notification" in window && Notification.permission === "default") document.getElementById('btn-enable-notif').style.display = 'inline-block';
                 }
             }, (error) => {
                 console.error('Error al cargar deportistas:', error);
@@ -510,20 +467,46 @@
             });
         }
 
+        // ✅ CORREGIDO: Lógica estricta que solo muestra "Al día" si el pago está VALIDADO
         function getPaymentStatus(student) {
             const today = new Date(); today.setHours(0, 0, 0, 0);
             const cutoffDay = parseInt(student.fechaCorte) || 5;
-            const nextDueDate = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
-            if (today > nextDueDate) nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-            if (!student.pagos || student.pagos.length === 0) return { status: 'overdue', text: 'Sin pagos' };
-            const lastPayment = student.pagos[student.pagos.length - 1];
-            const lastPaymentDate = lastPayment.fecha.toDate ? lastPayment.fecha.toDate() : new Date(lastPayment.fecha);
-            if (lastPaymentDate >= nextDueDate) return { status: 'paid', text: 'Al día' };
-            const currentMonthCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
-            if (lastPaymentDate < currentMonthCutoff) return { status: 'overdue', text: 'Vencido' };
-            const daysUntilDue = Math.ceil((nextDueDate - today) / (1000 * 60 * 60 * 24));
-            if (daysUntilDue <= 7) return { status: 'pending', text: 'Por vencer' };
-            return { status: 'paid', text: 'Al día' };
+            
+            let currentPeriodCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (today.getDate() > cutoffDay) {
+                // Estamos después del corte, el corte del periodo actual fue este mes
+            } else {
+                // Estamos antes del corte, el corte del periodo actual fue el mes pasado
+                currentPeriodCutoff.setMonth(currentPeriodCutoff.getMonth() - 1);
+            }
+            
+            if (!student.pagos || student.pagos.length === 0) {
+                return { status: 'overdue', text: 'Sin pagos' };
+            }
+            
+            // Filtrar SOLO pagos que el admin ya validó
+            const validatedPayments = student.pagos.filter(p => p.estado === 'validado');
+            
+            if (validatedPayments.length === 0) {
+                return { status: 'pending', text: 'Pendiente de validación' };
+            }
+            
+            const lastValidated = validatedPayments[validatedPayments.length - 1];
+            const lastPaymentDate = lastValidated.fecha.toDate ? lastValidated.fecha.toDate() : new Date(lastValidated.fecha);
+            lastPaymentDate.setHours(0, 0, 0, 0);
+            
+            // Si el último pago validado cubre el periodo actual, está al día y el botón debe desaparecer
+            if (lastPaymentDate >= currentPeriodCutoff) {
+                return { status: 'paid', text: 'Al día' };
+            }
+            
+            let nextCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (today.getDate() > cutoffDay) nextCutoff.setMonth(nextCutoff.getMonth() + 1);
+            
+            const daysToNext = Math.ceil((nextCutoff - today) / (1000 * 60 * 60 * 24));
+            if (daysToNext <= 5) return { status: 'pending', text: 'Por vencer' };
+            
+            return { status: 'overdue', text: 'Vencido' };
         }
 
         function renderDashboard() {
@@ -553,6 +536,8 @@
                 const cutoffDay = student.fechaCorte || 5;
                 const monthlyAmount = student.montoMensual || 0;
                 const card = document.createElement('div'); card.className = 'student-card';
+                
+                // ✅ El botón solo se muestra si NO está 'paid' (es decir, si falta validación o está vencido)
                 const showPaymentButton = ps.status !== 'paid';
                 
                 const validatedPayments = (student.pagos || []).filter(p => p.estado === 'validado');
@@ -667,100 +652,63 @@
         }
         window.deleteStudent = async function(id) { if (confirm('¿Eliminar este registro? Esta acción no se puede deshacer.')) { await db.collection('alumnos').doc(id).delete(); } }
 
-        // ✅ CORREGIDO: Búsqueda directa en la colección 'pagos' para garantizar que el folio se lea correctamente
         window.openReceiptModalByStudent = async function(studentId) {
             const student = students.find(s => s.id === studentId);
             if (!student) return;
             
             let latestValidated = null;
             try {
-                // Buscamos directamente en la colección 'pagos' para evitar fallos de sincronización del array local
-                const pagosSnapshot = await db.collection('pagos')
-                    .where('alumnoId', '==', studentId)
-                    .where('estado', '==', 'validado')
-                    .get(); // Sin orderBy para evitar errores de índice compuesto
-                
+                const pagosSnapshot = await db.collection('pagos').where('alumnoId', '==', studentId).where('estado', '==', 'validado').get();
                 let maxTimestamp = 0;
                 pagosSnapshot.forEach(doc => {
                     const data = doc.data();
                     const dateObj = data.fechaEmision ? (data.fechaEmision.toDate ? data.fechaEmision.toDate() : new Date(data.fechaEmision)) : 
                                    (data.fecha ? (data.fecha.toDate ? data.fecha.toDate() : new Date(data.fecha)) : new Date(0));
                     const timestamp = dateObj.getTime();
-                    if (timestamp > maxTimestamp) {
-                        maxTimestamp = timestamp;
-                        latestValidated = data;
-                    }
+                    if (timestamp > maxTimestamp) { maxTimestamp = timestamp; latestValidated = data; }
                 });
-            } catch (error) {
-                console.error("Error al buscar pago:", error);
-            }
+            } catch (error) { console.error("Error al buscar pago:", error); }
 
-            // Fallback al array local si la consulta falla o está vacía
             if (!latestValidated) {
                 const validatedPayments = (student.pagos || []).filter(p => p.estado === 'validado');
-                if (validatedPayments.length > 0) {
-                    latestValidated = validatedPayments[validatedPayments.length - 1];
-                }
+                if (validatedPayments.length > 0) latestValidated = validatedPayments[validatedPayments.length - 1];
             }
 
-            if (!latestValidated) {
-                alert('No se encontró ningún pago validado para este deportista.');
-                return;
-            }
+            if (!latestValidated) { alert('No se encontró ningún pago validado.'); return; }
             
             currentReceiptPayment = latestValidated;
-            
-            const fechaEmision = latestValidated.fechaEmision ? 
-                (latestValidated.fechaEmision.toDate ? latestValidated.fechaEmision.toDate() : new Date(latestValidated.fechaEmision)) : 
-                (latestValidated.fecha ? (latestValidated.fecha.toDate ? latestValidated.fecha.toDate() : new Date(latestValidated.fecha)) : new Date());
+            const fechaEmision = latestValidated.fechaEmision ? (latestValidated.fechaEmision.toDate ? latestValidated.fechaEmision.toDate() : new Date(latestValidated.fechaEmision)) : new Date();
             
             document.getElementById('receipt-school-name').textContent = schoolConfig.schoolName || 'Roller Vibes MX';
             document.getElementById('receipt-school-slogan').textContent = schoolConfig.slogan || 'Escuela de Patinaje';
             document.getElementById('receipt-school-address').textContent = '📍 ' + (schoolConfig.address || 'Dirección no configurada');
             document.getElementById('receipt-school-phone').textContent = '📞 ' + (schoolConfig.phone || 'Teléfono no configurado');
-            
-            // ✅ Aquí se asegura que el folio se muestre correctamente (ej. RV-NOV26-1000)
-            const folio = latestValidated.folio || 'N/A';
-            document.getElementById('receipt-folio').textContent = `Folio: ${folio}`;
-            
+            document.getElementById('receipt-folio').textContent = `Folio: ${latestValidated.folio || 'N/A'}`;
             document.getElementById('receipt-date').textContent = fechaEmision.toLocaleDateString('es-MX', { year: 'numeric', month: 'long', day: 'numeric' });
             document.getElementById('receipt-student').textContent = student.nombre || 'N/A';
             document.getElementById('receipt-level').textContent = student.nivel || 'N/A';
             document.getElementById('receipt-parent').textContent = student.tutor || 'N/A';
             document.getElementById('receipt-method').textContent = latestValidated.metodo || 'N/A';
             document.getElementById('receipt-amount').textContent = `$${(latestValidated.monto || 0).toFixed(2)} MXN`;
-            
             document.getElementById('receipt-modal').classList.add('show');
         }
         
-        window.closeReceiptModal = function() {
-            document.getElementById('receipt-modal').classList.remove('show');
-            currentReceiptPayment = null;
-        }
-
+        window.closeReceiptModal = function() { document.getElementById('receipt-modal').classList.remove('show'); currentReceiptPayment = null; }
         window.downloadReceipt = function() {
             const element = document.getElementById('receipt-content');
             html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' }).then(canvas => {
                 const link = document.createElement('a');
-                const folio = currentReceiptPayment?.folio || 'Pago';
-                link.download = `Recibo_${folio}.png`;
+                link.download = `Recibo_${currentReceiptPayment?.folio || 'Pago'}.png`;
                 link.href = canvas.toDataURL('image/png');
                 link.click();
             });
         }
-
         window.shareReceiptWhatsApp = function() {
             if (!currentReceiptPayment) return;
             const student = students.find(s => s.id === currentReceiptPayment.alumnoId) || students.find(s => s.pagos?.some(p => p.folio === currentReceiptPayment.folio));
-            const fecha = currentReceiptPayment.fechaEmision ? 
-                (currentReceiptPayment.fechaEmision.toDate ? currentReceiptPayment.fechaEmision.toDate() : new Date(currentReceiptPayment.fechaEmision)).toLocaleDateString('es-MX') : 
-                'N/A';
-            
-            const folio = currentReceiptPayment.folio || 'N/A';
-            const text = `🛼 *ROLLER VIBES MX LA PAZ*\nRecibo de Pago\n\n📋 Folio: ${folio}\n📅 Fecha: ${fecha}\n\n👤 Deportista: ${student?.nombre || 'N/A'}\n🎯 Nivel: ${student?.nivel || 'N/A'}\n👨‍👩‍👧 Tutor: ${student?.tutor || 'N/A'}\n\n💰 Concepto: Mensualidad de patinaje\n💳 Método: ${currentReceiptPayment.metodo || 'N/A'}\n✅ Monto pagado: $${(currentReceiptPayment.monto || 0).toFixed(2)} MXN\n\n¡Gracias por tu pago! 🛼`;
-            
-            const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-            window.open(url, '_blank');
+            const fecha = currentReceiptPayment.fechaEmision ? (currentReceiptPayment.fechaEmision.toDate ? currentReceiptPayment.fechaEmision.toDate() : new Date(currentReceiptPayment.fechaEmision)).toLocaleDateString('es-MX') : 'N/A';
+            const text = `🛼 *ROLLER VIBES MX LA PAZ*\nRecibo de Pago\n\n📋 Folio: ${currentReceiptPayment.folio || 'N/A'}\n📅 Fecha: ${fecha}\n\n👤 Deportista: ${student?.nombre || 'N/A'}\n🎯 Nivel: ${student?.nivel || 'N/A'}\n👨‍👩‍👧 Tutor: ${student?.tutor || 'N/A'}\n\n💰 Concepto: Mensualidad de patinaje\n💳 Método: ${currentReceiptPayment.metodo || 'N/A'}\n✅ Monto pagado: $${(currentReceiptPayment.monto || 0).toFixed(2)} MXN\n\n¡Gracias por tu pago! 🛼`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
 
         document.getElementById('student-modal').addEventListener('click', function(e) { if (e.target === this) window.closeStudentModal(); });
