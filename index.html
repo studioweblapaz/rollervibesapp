@@ -401,7 +401,7 @@
                     if (lastPaymentDate < nextDueDate) {
                         const daysUntilDue = Math.ceil((nextDueDate - today) / (1000 * 60 * 60 * 24));
                         if (daysUntilDue < 0) { needsPayment = true; statusText = `Vencido desde hace ${Math.abs(daysUntilDue)} días`; } 
-                        else if (daysUntilDue <= 5) { needsPayment = true; statusText = `Vence en ${daysUntilDue} días (${nextDueDate.toLocaleDateString('es-MX')})`; }
+                        else if (daysUntilDue <= 9) { needsPayment = true; statusText = `Vence en ${daysUntilDue} días (${nextDueDate.toLocaleDateString('es-MX')})`; }
                     }
                 }
                 if (needsPayment) notificationsToSend.push({ name: student.nombre, status: statusText, amount: student.montoMensual || 0 });
