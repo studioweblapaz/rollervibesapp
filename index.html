@@ -383,15 +383,19 @@
             }
         }
 
-        // ✅ CORREGIDO: Usa la misma lógica robusta de getPaymentStatus para las notificaciones
+        // ✅ CORREGIDO: Lógica de notificación diaria (no por sesión) para que sea confiable
         function checkUpcomingPayments() {
             if (!("Notification" in window) || Notification.permission !== "granted") return;
-            if (sessionStorage.getItem('notified_payments_today')) return;
             
+            const todayStr = new Date().toDateString();
+            const lastNotified = localStorage.getItem('lastNotifiedDate');
+            
+            // Solo notificar una vez al día para no saturar al usuario
+            if (lastNotified === todayStr) return;
+
             let notificationsToSend = [];
             students.forEach(student => {
                 const ps = getPaymentStatus(student);
-                // Notificar si está por vencer o vencido
                 if (ps.status === 'pending' || ps.status === 'overdue') {
                     notificationsToSend.push({
                         name: student.nombre,
@@ -406,11 +410,12 @@
                     setTimeout(() => {
                         new Notification("🛼 Roller Vibes MX - Recordatorio de Pago", {
                             body: `Deportista: ${item.name}\nEstado: ${item.status}\nMonto: $${item.amount}\n\nToca aquí para gestionar el pago.`,
-                            icon: "./logo-192.png", badge: "./logo-192.png"
+                            icon: "./logo-192.png",
+                            badge: "./logo-192.png"
                         });
                     }, index * 1500);
                 });
-                sessionStorage.setItem('notified_payments_today', 'true');
+                localStorage.setItem('lastNotifiedDate', todayStr);
             }
         }
 
@@ -462,12 +467,16 @@
             });
         }
 
-        // ✅ CORREGIDO: Lógica que respeta la fechaInicio para el primer vencimiento
+        // ✅ CORREGIDO: Manejo robusto de fechas de Firestore (Timestamps) para evitar fallos en tiempo real
         function getPaymentStatus(student) {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             const cutoffDay = parseInt(student.fechaCorte) || 5;
-            const startDate = student.fechaInicio ? new Date(student.fechaInicio + 'T12:00:00') : today;
+            
+            // Conversión segura de fecha de inicio desde Firestore
+            const startDate = student.fechaInicio ? 
+                (student.fechaInicio.toDate ? student.fechaInicio.toDate() : new Date(student.fechaInicio)) : 
+                today;
             
             const validatedPayments = (student.pagos || []).filter(p => p.estado === 'validado');
             
@@ -476,11 +485,8 @@
                 const lastPaid = validatedPayments[validatedPayments.length - 1];
                 const lastPaidDate = lastPaid.fecha.toDate ? lastPaid.fecha.toDate() : new Date(lastPaid.fecha);
                 lastPaidDate.setHours(0, 0, 0, 0);
-                
-                // El siguiente vencimiento es siempre el corte del mes siguiente al último pago
                 nextDueDate = new Date(lastPaidDate.getFullYear(), lastPaidDate.getMonth() + 1, cutoffDay);
             } else {
-                // Sin pagos, el primer vencimiento se basa en la fecha de inicio
                 nextDueDate = new Date(startDate.getFullYear(), startDate.getMonth(), cutoffDay);
                 if (startDate.getDate() >= cutoffDay) {
                     nextDueDate.setMonth(nextDueDate.getMonth() + 1);
