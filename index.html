@@ -383,7 +383,7 @@
             }
         }
 
-        // ✅ CORREGIDO: Notificación diaria confiable usando localStorage
+        // ✅ CORREGIDO: Lógica de notificación diaria (no por sesión) para que sea confiable
         function checkUpcomingPayments() {
             if (!("Notification" in window) || Notification.permission !== "granted") return;
             
@@ -410,7 +410,8 @@
                     setTimeout(() => {
                         new Notification("🛼 Roller Vibes MX - Recordatorio de Pago", {
                             body: `Deportista: ${item.name}\nEstado: ${item.status}\nMonto: $${item.amount}\n\nToca aquí para gestionar el pago.`,
-                            icon: "./logo-192.png", badge: "./logo-192.png"
+                            icon: "./logo-192.png",
+                            badge: "./logo-192.png"
                         });
                     }, index * 1500);
                 });
@@ -466,7 +467,7 @@
             });
         }
 
-        // ✅ CORREGIDO: Lógica que respeta la fechaInicio para el primer vencimiento y maneja Timestamps de Firestore correctamente
+        // ✅ CORREGIDO: Manejo robusto de fechas de Firestore (Timestamps) para evitar fallos en tiempo real
         function getPaymentStatus(student) {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -484,10 +485,8 @@
                 const lastPaid = validatedPayments[validatedPayments.length - 1];
                 const lastPaidDate = lastPaid.fecha.toDate ? lastPaid.fecha.toDate() : new Date(lastPaid.fecha);
                 lastPaidDate.setHours(0, 0, 0, 0);
-                // El siguiente vencimiento es siempre el corte del mes siguiente al último pago
                 nextDueDate = new Date(lastPaidDate.getFullYear(), lastPaidDate.getMonth() + 1, cutoffDay);
             } else {
-                // Sin pagos, el primer vencimiento se basa en la fecha de inicio
                 nextDueDate = new Date(startDate.getFullYear(), startDate.getMonth(), cutoffDay);
                 if (startDate.getDate() >= cutoffDay) {
                     nextDueDate.setMonth(nextDueDate.getMonth() + 1);
