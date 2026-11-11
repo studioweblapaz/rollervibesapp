@@ -113,8 +113,8 @@
 
         <div class="tabs">
             <button class="tab-btn active" onclick="window.switchTab('dashboard')">📊 Dashboard</button>
-            <button class="tab-btn" onclick="window.switchTab('alumnos')">👨‍👩‍Todos los Alumnos</button>
-            <button class="tab-btn" onclick="window.switchTab('padres')">👨‍👩‍ Padres</button>
+            <button class="tab-btn" onclick="window.switchTab('alumnos')">👨‍‍Todos los Alumnos</button>
+            <button class="tab-btn" onclick="window.switchTab('padres')">👨‍‍ Padres</button>
             <button class="tab-btn" onclick="window.switchTab('pagos')">💰 Pagos</button>
             <button class="tab-btn" onclick="window.switchTab('pendientes')">⏳ Pagos Pendientes</button>
             <button class="tab-btn" onclick="window.switchTab('config')">⚙️ Configuración</button>
@@ -438,12 +438,14 @@
             document.getElementById('stat-parents').textContent = parents.length;
         }
 
+        // ✅ CORREGIDO: Agregado teléfono y mensualidad como en el index
         function renderStudents() {
             const container = document.getElementById('students-container');
             container.innerHTML = students.length === 0 ? '<p class="loading">No hay alumnos registrados.</p>' : '';
             students.forEach(student => {
                 const ps = getPaymentStatus(student);
                 const parent = parents.find(p => p.id === student.padreId);
+                const monthlyAmount = student.montoMensual || 0;
                 const card = document.createElement('div'); card.className = 'student-card';
                 card.innerHTML = `
                     <img src="${student.foto || './logo-192.png'}" alt="${student.nombre}" class="student-photo" onerror="this.src='./logo-192.png'">
@@ -451,6 +453,8 @@
                         <div class="student-name">${student.nombre}</div>
                         <div class="student-parent">👤 ${parent?.nombre || parent?.email || 'Sin padre asignado'}</div>
                         <div class="student-parent">📅 Corte: día ${student.fechaCorte || 5} • ${student.nivel || 'Sin nivel'}</div>
+                        <div class="student-parent">📞 Teléfono: ${student.telefono || 'No disponible'}</div>
+                        ${monthlyAmount > 0 ? `<div class="student-parent" style="color: var(--success-color); font-weight: 600;">💰 Mensualidad: $${monthlyAmount}</div>` : ''}
                     </div>
                     <span class="payment-status status-${ps.status}">${ps.text}</span>
                     <button class="btn-edit" onclick="window.editStudent('${student.id}')">✏️</button>
@@ -741,7 +745,7 @@
             const student = students.find(s => s.id === currentReceiptPayment.alumnoId);
             const parent = parents.find(p => p.id === currentReceiptPayment.padreId);
             const fecha = currentReceiptPayment.fechaEmision ? (currentReceiptPayment.fechaEmision.toDate ? currentReceiptPayment.fechaEmision.toDate() : new Date(currentReceiptPayment.fechaEmision)).toLocaleDateString('es-MX') : 'N/A';
-            const text = `🛼 *ROLLER VIBES MX LA PAZ*\nRecibo de Pago\n\n📋 Folio: ${currentReceiptPayment.folio || 'N/A'}\n📅 Fecha: ${fecha}\n\n👤 Deportista: ${student?.nombre || 'N/A'}\n🎯 Nivel: ${student?.nivel || 'N/A'}\n👨‍👩‍👧 Tutor: ${parent?.nombre || parent?.email || 'N/A'}\n\n💰 Concepto: Mensualidad de patinaje\n💳 Método: ${currentReceiptPayment.metodo || 'N/A'}\n✅ Monto pagado: $${(currentReceiptPayment.monto || 0).toFixed(2)} MXN\n\n¡Gracias por tu pago! 🛼`;
+            const text = `🛼 *ROLLER VIBES MX LA PAZ*\nRecibo de Pago\n\n📋 Folio: ${currentReceiptPayment.folio || 'N/A'}\n Fecha: ${fecha}\n\n Deportista: ${student?.nombre || 'N/A'}\n🎯 Nivel: ${student?.nivel || 'N/A'}\n👨👩‍👧 Tutor: ${parent?.nombre || parent?.email || 'N/A'}\n\n💰 Concepto: Mensualidad de patinaje\n💳 Método: ${currentReceiptPayment.metodo || 'N/A'}\n✅ Monto pagado: $${(currentReceiptPayment.monto || 0).toFixed(2)} MXN\n\n¡Gracias por tu pago! `;
             window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
         }
         window.saveConfig = async function() {
