@@ -367,32 +367,53 @@
             db.collection('configuracion').doc('escuela').onSnapshot(doc => { if (doc.exists) schoolConfig = doc.data(); });
         }
 
-        // ✅ CORREGIDO: Lógica robusta que no marca como vencido un pago hecho antes del corte
+        // ✅ CORREGIDO: Lógica estricta de estados (Reglas 1, 3, 4 y 5)
         function getPaymentStatus(student) {
-            const today = new Date(); today.setHours(0, 0, 0, 0);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
             const cutoffDay = parseInt(student.fechaCorte) || 5;
             
-            let relevantCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
-            if (today.getDate() < cutoffDay) relevantCutoff.setMonth(relevantCutoff.getMonth() - 1);
-            
+            // 1. Determinar la próxima fecha de corte
             let nextCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
-            if (today.getDate() > cutoffDay) nextCutoff.setMonth(nextCutoff.getMonth() + 1);
+            if (today.getDate() > cutoffDay) {
+                nextCutoff.setMonth(nextCutoff.getMonth() + 1);
+            }
+            const daysToNextCutoff = Math.ceil((nextCutoff - today) / (1000 * 60 * 60 * 24));
             
-            if (!student.pagos || student.pagos.length === 0) {
-                const daysToNext = Math.ceil((nextCutoff - today) / (1000 * 60 * 60 * 24));
-                return daysToNext <= 5 ? { status: 'pending', text: 'Por vencer' } : { status: 'overdue', text: 'Sin pagos' };
+            const allPayments = student.pagos || [];
+            const pendingPayments = allPayments.filter(p => p.estado === 'pendiente');
+            const validatedPayments = allPayments.filter(p => p.estado === 'validado');
+            
+            // 2. Verificar si ya hay un pago VALIDADO para el periodo actual
+            let currentPeriodStart = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (today.getDate() <= cutoffDay) {
+                currentPeriodStart.setMonth(currentPeriodStart.getMonth() - 1);
             }
             
-            const lastPayment = student.pagos[student.pagos.length - 1];
-            const lastPaymentDate = lastPayment.fecha.toDate ? lastPayment.fecha.toDate() : new Date(lastPayment.fecha);
-            lastPaymentDate.setHours(0, 0, 0, 0);
+            const hasValidatedForCurrentPeriod = validatedPayments.some(p => {
+                const pDate = p.fecha.toDate ? p.fecha.toDate() : new Date(p.fecha);
+                pDate.setHours(0, 0, 0, 0);
+                return pDate >= currentPeriodStart;
+            });
             
-            if (lastPaymentDate >= relevantCutoff) return { status: 'paid', text: 'Al día' };
+            // REGLA 4: Si está validado para este periodo, está "Al día"
+            if (hasValidatedForCurrentPeriod) {
+                return { status: 'paid', text: 'Al día' };
+            }
             
-            const daysToNext = Math.ceil((nextCutoff - today) / (1000 * 60 * 60 * 24));
-            if (daysToNext <= 5) return { status: 'pending', text: 'Por vencer' };
+            // REGLA 3: Si el usuario registró el pago pero el admin aún no lo valida
+            if (pendingPayments.length > 0) {
+                return { status: 'pending', text: 'Pendiente de validar' };
+            }
             
-            return { status: 'overdue', text: 'Vencido' };
+            // REGLAS 1 y 5: No hay pago validado ni pendiente. Depende de los días para el corte.
+            if (daysToNextCutoff <= 0) {
+                // REGLA 5: La fecha de corte ya pasó y el admin no ha validado
+                return { status: 'overdue', text: 'Vencido' };
+            } else {
+                // REGLA 1: Siempre es "Por vencer" mientras no pase la fecha de corte
+                return { status: 'pending', text: 'Por vencer' };
+            }
         }
 
         function renderDashboard() {
@@ -657,7 +678,6 @@
                 
                 await db.collection('configuracion').doc('escuela').set({ ...configData, ultimoFolio: { periodo: currentPeriod, numero: newNumero } }, { merge: true });
                 
-                // ✅ CORREGIDO: Usar mediodía para evitar problemas de zona horaria
                 const safeDate = new Date(date + 'T12:00:00');
                 
                 await db.collection('pagos').doc(currentValidatePaymentId).update({
