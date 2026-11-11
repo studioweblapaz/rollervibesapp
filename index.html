@@ -383,23 +383,57 @@
             }
         }
 
-        // ✅ CORREGIDO: Lógica de notificación diaria (no por sesión) para que sea confiable
+        // ✅ CORREGIDO: Lógica estricta de notificaciones (Regla 2)
         function checkUpcomingPayments() {
             if (!("Notification" in window) || Notification.permission !== "granted") return;
             
             const todayStr = new Date().toDateString();
             const lastNotified = localStorage.getItem('lastNotifiedDate');
             
-            // Solo notificar una vez al día para no saturar al usuario
+            // Notificar una vez al día
             if (lastNotified === todayStr) return;
 
             let notificationsToSend = [];
             students.forEach(student => {
-                const ps = getPaymentStatus(student);
-                if (ps.status === 'pending' || ps.status === 'overdue') {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const cutoffDay = parseInt(student.fechaCorte) || 5;
+                
+                let nextCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+                if (today.getDate() > cutoffDay) {
+                    nextCutoff.setMonth(nextCutoff.getMonth() + 1);
+                }
+                const daysToNextCutoff = Math.ceil((nextCutoff - today) / (1000 * 60 * 60 * 24));
+                
+                const allPayments = student.pagos || [];
+                const pendingPayments = allPayments.filter(p => p.estado === 'pendiente');
+                const validatedPayments = allPayments.filter(p => p.estado === 'validado');
+                
+                let currentPeriodStart = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+                if (today.getDate() <= cutoffDay) {
+                    currentPeriodStart.setMonth(currentPeriodStart.getMonth() - 1);
+                }
+                
+                const hasValidatedForCurrentPeriod = validatedPayments.some(p => {
+                    const pDate = p.fecha.toDate ? p.fecha.toDate() : new Date(p.fecha);
+                    pDate.setHours(0, 0, 0, 0);
+                    return pDate >= currentPeriodStart;
+                });
+                
+                // REGLA 2: Notificar 5 días antes del corte y cada día hasta que se valide.
+                if (!hasValidatedForCurrentPeriod && daysToNextCutoff <= 5) {
+                    let statusText = "";
+                    if (pendingPayments.length > 0) {
+                        statusText = "Pendiente de validar por el admin";
+                    } else if (daysToNextCutoff > 0) {
+                        statusText = `Por vencer en ${daysToNextCutoff} días`;
+                    } else {
+                        statusText = "Vencido";
+                    }
+                    
                     notificationsToSend.push({
                         name: student.nombre,
-                        status: ps.text,
+                        status: statusText,
                         amount: student.montoMensual || 0
                     });
                 }
@@ -467,48 +501,52 @@
             });
         }
 
-        // ✅ CORREGIDO: Manejo robusto de fechas de Firestore (Timestamps) para evitar fallos en tiempo real
+        // ✅ CORREGIDO: Lógica estricta de estados (Reglas 1, 3, 4 y 5)
         function getPaymentStatus(student) {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
             const cutoffDay = parseInt(student.fechaCorte) || 5;
             
-            // Conversión segura de fecha de inicio desde Firestore
-            const startDate = student.fechaInicio ? 
-                (student.fechaInicio.toDate ? student.fechaInicio.toDate() : new Date(student.fechaInicio)) : 
-                today;
+            // 1. Determinar la próxima fecha de corte
+            let nextCutoff = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (today.getDate() > cutoffDay) {
+                nextCutoff.setMonth(nextCutoff.getMonth() + 1);
+            }
+            const daysToNextCutoff = Math.ceil((nextCutoff - today) / (1000 * 60 * 60 * 24));
             
-            const validatedPayments = (student.pagos || []).filter(p => p.estado === 'validado');
+            const allPayments = student.pagos || [];
+            const pendingPayments = allPayments.filter(p => p.estado === 'pendiente');
+            const validatedPayments = allPayments.filter(p => p.estado === 'validado');
             
-            let nextDueDate;
-            if (validatedPayments.length > 0) {
-                const lastPaid = validatedPayments[validatedPayments.length - 1];
-                const lastPaidDate = lastPaid.fecha.toDate ? lastPaid.fecha.toDate() : new Date(lastPaid.fecha);
-                lastPaidDate.setHours(0, 0, 0, 0);
-                nextDueDate = new Date(lastPaidDate.getFullYear(), lastPaidDate.getMonth() + 1, cutoffDay);
-            } else {
-                nextDueDate = new Date(startDate.getFullYear(), startDate.getMonth(), cutoffDay);
-                if (startDate.getDate() >= cutoffDay) {
-                    nextDueDate.setMonth(nextDueDate.getMonth() + 1);
-                }
+            // 2. Verificar si ya hay un pago VALIDADO para el periodo actual
+            let currentPeriodStart = new Date(today.getFullYear(), today.getMonth(), cutoffDay);
+            if (today.getDate() <= cutoffDay) {
+                currentPeriodStart.setMonth(currentPeriodStart.getMonth() - 1);
             }
             
-            if (validatedPayments.length === 0) {
-                if (today < nextDueDate) {
-                    return { status: 'pending', text: 'Por vencer' };
-                } else {
-                    return { status: 'overdue', text: 'Vencido' };
-                }
-            }
+            const hasValidatedForCurrentPeriod = validatedPayments.some(p => {
+                const pDate = p.fecha.toDate ? p.fecha.toDate() : new Date(p.fecha);
+                pDate.setHours(0, 0, 0, 0);
+                return pDate >= currentPeriodStart;
+            });
             
-            const daysUntilDue = Math.ceil((nextDueDate - today) / (1000 * 60 * 60 * 24));
-            
-            if (daysUntilDue <= 0) {
-                return { status: 'overdue', text: 'Vencido' };
-            } else if (daysUntilDue <= 5) {
-                return { status: 'pending', text: 'Por vencer' };
-            } else {
+            // REGLA 4: Si está validado para este periodo, está "Al día"
+            if (hasValidatedForCurrentPeriod) {
                 return { status: 'paid', text: 'Al día' };
+            }
+            
+            // REGLA 3: Si el usuario registró el pago pero el admin aún no lo valida
+            if (pendingPayments.length > 0) {
+                return { status: 'pending', text: 'Pendiente de validar' };
+            }
+            
+            // REGLAS 1 y 5: No hay pago validado ni pendiente. Depende de los días para el corte.
+            if (daysToNextCutoff <= 0) {
+                // REGLA 5: La fecha de corte ya pasó y el admin no ha validado
+                return { status: 'overdue', text: 'Vencido' };
+            } else {
+                // REGLA 1: Siempre es "Por vencer" mientras no pase la fecha de corte
+                return { status: 'pending', text: 'Por vencer' };
             }
         }
 
@@ -540,6 +578,7 @@
                 const monthlyAmount = student.montoMensual || 0;
                 const card = document.createElement('div'); card.className = 'student-card';
                 
+                // El botón solo se muestra si NO está 'paid'
                 const showPaymentButton = ps.status !== 'paid';
                 
                 const validatedPayments = (student.pagos || []).filter(p => p.estado === 'validado');
